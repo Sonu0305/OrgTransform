@@ -558,12 +558,7 @@ def it_dependency_map() -> list[dict[str, Any]]:
 
 @app.get(f"{settings.api_prefix}/it/capacity-monitor")
 def it_capacity_monitor() -> list[dict[str, Any]]:
-    return [
-        {"month": "Jan", "storage": 18, "requests": 22},
-        {"month": "Feb", "storage": 22, "requests": 31},
-        {"month": "Mar", "storage": 27, "requests": 38},
-        {"month": "Apr", "storage": 34, "requests": 45},
-    ]
+    return db.CAPACITY_MONITOR
 
 
 @app.get(f"{settings.api_prefix}/it/api-surface")

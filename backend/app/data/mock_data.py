@@ -1028,6 +1028,13 @@ FREE_TIER_STACK = [
     {"service": "Blockchain", "provider": "Polygon Mumbai-ready", "status": "Local hash", "limit": "Hash verification workflow"},
 ]
 
+CAPACITY_MONITOR = [
+    {"month": "Jan", "storage": 18, "requests": 22, "latency": 112, "errors": 1},
+    {"month": "Feb", "storage": 22, "requests": 31, "latency": 105, "errors": 0},
+    {"month": "Mar", "storage": 27, "requests": 38, "latency": 98, "errors": 1},
+    {"month": "Apr", "storage": 34, "requests": 45, "latency": 92, "errors": 0},
+]
+
 
 API_ENDPOINTS = [
     "GET /health",
@@ -1080,6 +1087,7 @@ PERSISTED_COLLECTIONS = {
     "audit_log": "AUDIT_LOG",
     "kpis": "KPI_CARDS",
     "free_tier_stack": "FREE_TIER_STACK",
+    "capacity_monitor": "CAPACITY_MONITOR",
     "api_endpoints": "API_ENDPOINTS",
 }
 
@@ -1142,6 +1150,7 @@ def snapshot() -> dict:
         "audit_log": deepcopy(AUDIT_LOG),
         "kpis": deepcopy(KPI_CARDS),
         "free_tier_stack": deepcopy(FREE_TIER_STACK),
+        "capacity_monitor": deepcopy(CAPACITY_MONITOR),
         "api_endpoints": deepcopy(API_ENDPOINTS),
     }
 

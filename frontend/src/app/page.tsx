@@ -13,7 +13,6 @@ import {
   BrainCircuit,
   CheckCircle2,
   ChevronRight,
-  CircleDollarSign,
   ClipboardCheck,
   Command,
   Database,
@@ -107,12 +106,15 @@ const navByRole: Record<RoleKey, { label: string; icon: typeof Activity; id: str
     { label: "Departments Needing Help", icon: LayoutGrid, id: "resistance-heatmap" },
     { label: "Workflow Delays", icon: LineChartIcon, id: "process-debt" },
     { label: "Approval Route", icon: Network, id: "authority-map" },
+    { label: "Knowledge Risk", icon: AlertTriangle, id: "knowledge-risk" },
+    { label: "Change Plan", icon: Users, id: "change-plan" },
   ],
   student: [
     { label: "My Progress", icon: BrainCircuit, id: "learning-path" },
     { label: "Course Registration", icon: BookOpen, id: "my-courses" },
     { label: "Course Help", icon: Bot, id: "ai-tutor" },
     { label: "Certificates", icon: BadgeCheck, id: "credentials" },
+    { label: "Learning Rewards", icon: WalletCards, id: "learning-rewards" },
   ],
   faculty: [
     { label: "My Classes", icon: BookOpen, id: "course-studio" },
@@ -121,6 +123,7 @@ const navByRole: Record<RoleKey, { label: string; icon: typeof Activity; id: str
   ],
   it: [
     { label: "System Health", icon: Database, id: "local-stack" },
+    { label: "Capacity", icon: Activity, id: "capacity-monitor" },
     { label: "API Checklist", icon: GitBranch, id: "api-surface" },
     { label: "Privacy", icon: LockKeyhole, id: "privacy" },
     { label: "Audit Trail", icon: FileCheck2, id: "audit-trail" },
@@ -989,6 +992,11 @@ function AdminDashboard({ overview }: { overview: Overview }) {
           <AuthorityMap overview={overview} />
         </Panel>
       </div>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <KnowledgeContinuityPanel overview={overview} />
+        <ChangeManagementPanel overview={overview} id="change-plan" />
+      </div>
     </div>
   );
 }
@@ -1020,6 +1028,16 @@ function ProcessDebtRow({ item, onCreatePlan }: { item: ProcessDebt; onCreatePla
         <ProgressBar value={item.percentile} tone={item.status === "Red" ? "bg-rose-500" : item.status === "Amber" ? "bg-amber-500" : "bg-emerald-500"} />
         <span className="w-12 text-right text-sm font-semibold text-slate-700">{item.score.toFixed(1)}</span>
       </div>
+      <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+        <span>{item.steps} steps</span>
+        <span>{item.revision_count} revisions</span>
+        <span>{item.avg_approval_days} avg days</span>
+      </div>
+      {item.last_action ? (
+        <p className="mt-2 text-xs text-slate-500">
+          Last action: {item.last_action.action} by {item.last_action.actor}
+        </p>
+      ) : null}
       <button
         type="button"
         onClick={onCreatePlan}
@@ -1126,6 +1144,13 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
     });
   }, [courseDepartment, courseQuery, overview.courses]);
   const displayedCourses = showAllCourses || courseQuery || courseDepartment !== "All" ? visibleCourses : visibleCourses.slice(0, 6);
+  const completedScores = overview.gradebook.filter((item) => item.score !== null);
+  const currentGrade = completedScores.length
+    ? (
+        completedScores.reduce((total, item) => total + ((item.score ?? 0) / item.max_score) * 10, 0) /
+        completedScores.length
+      ).toFixed(2)
+    : "N/A";
 
   useEffect(() => {
     setChat(overview.chat_history[chatCourse] ?? []);
@@ -1193,8 +1218,8 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
       />
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="Study Confidence" value={`${Math.round(pathway.mastery_probability * 100)}%`} delta={pathway.predicted_outcome} tone="blue" />
-        <MetricCard label="Current Grade" value="8.42" delta="+0.21" tone="green" />
-        <MetricCard label="Certificates" value={String(overview.certificates.length)} delta="ready to share" tone="blue" />
+        <MetricCard label="Current Grade" value={currentGrade} delta={`${completedScores.length} graded`} tone="green" />
+        <MetricCard label="Certificates" value={String(overview.certificates.length)} delta={`${overview.gamification.badges.length} badges`} tone="blue" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">
@@ -1328,7 +1353,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                     <div>
                       <p className="font-semibold text-ink">{course.code} · {course.title}</p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {course.department} · {course.credits} credits · {course.faculty.join(", ")}
+                        {course.department} · {course.term} · {course.credits} credits · {course.faculty.join(", ")}
                       </p>
                     </div>
                     <Badge className={enrollment ? riskClasses(enrollment.status) : "border-slate-200 bg-slate-50 text-slate-700"}>
@@ -1337,11 +1362,16 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                   </div>
                   <p className="mt-3 text-sm text-slate-600">{course.description}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {course.skills.slice(0, 3).map((skill) => (
+                    {course.skills.map((skill) => (
                       <Badge key={skill} className="border-slate-200 bg-slate-50 text-slate-700">
                         {skill}
                       </Badge>
                     ))}
+                  </div>
+                  <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                    <span>Prereq: {course.prerequisites.length ? course.prerequisites.join(", ") : "Open"}</span>
+                    <span>Avg grade {course.average_grade}</span>
+                    <span>Usage {course.adoption}%</span>
                   </div>
                   {enrollment ? (
                     <div className="mt-3">
@@ -1414,6 +1444,12 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                 </div>
                 <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Certificate ID</p>
                 <p className="mt-1 break-all rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{certificate.hash}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge className="border-slate-200 bg-slate-50 text-slate-700">Grade {certificate.grade}</Badge>
+                  {certificate.badges.map((badge) => (
+                    <Badge key={badge} className="border-sky-200 bg-sky-50 text-sky-800">{badge}</Badge>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -1430,6 +1466,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
           </div>
           {verifyResult ? <p className="mt-3 text-sm font-medium text-slate-700">{verifyResult}</p> : null}
         </Panel>
+        <GamificationPanel overview={overview} />
       </div>
     </div>
   );
@@ -1442,6 +1479,10 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
   const activeCourses = overview.courses.filter((course) => course.faculty.includes("Dr. Meena Iyer"));
   const gradingQueue = overview.submissions.filter((submission) => submission.status !== "Graded");
   const facultyHeatmap = overview.heatmap.filter((cell) => cell.role === "Faculty");
+  const assessmentsById = useMemo(
+    () => new Map(overview.assessments.map((assessment) => [assessment.id, assessment])),
+    [overview.assessments],
+  );
 
   async function handleSuggest(submissionId: string) {
     setWorking(submissionId);
@@ -1487,7 +1528,7 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="My Classes" value={String(activeCourses.length)} delta="Monsoon 2026" tone="blue" />
         <MetricCard label="Work To Review" value={String(gradingQueue.length)} delta="AI ready" tone="amber" />
-        <MetricCard label="Dashboard Use" value="91%" delta="+18%" tone="green" />
+        <MetricCard label="Dashboard Use" value={`${Math.round(facultyHeatmap.reduce((sum, cell) => sum + cell.feature_depth, 0) / Math.max(facultyHeatmap.length, 1))}%`} delta={`${facultyHeatmap.length} departments`} tone="green" />
       </div>
 
       <div className="grid gap-5 2xl:grid-cols-[1fr_1fr]">
@@ -1510,6 +1551,11 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                   </div>
                   <ProgressBar value={course.adoption} tone="bg-sky-500" />
                 </div>
+                <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                  <span>{course.term}</span>
+                  <span>{course.waitlist} waitlisted</span>
+                  <span>{course.skills.join(", ")}</span>
+                </div>
               </div>
             ))}
           </div>
@@ -1517,43 +1563,55 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
 
         <Panel id="grading-queue" title="Student Work Review" eyebrow="AI can suggest feedback, teacher stays in control" icon={Sparkles}>
           <div className="space-y-3">
-            {gradingQueue.map((submission) => (
-              <div key={submission.id} className="rounded-lg border border-line p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-ink">{submission.student_name}</p>
-                    <p className="text-sm text-slate-500">
-                      {courseCodeFor(overview, submission.course_id)} · {formatTime(submission.submitted_at)} · originality {(100 - submission.similarity_score * 100).toFixed(0)}%
-                    </p>
+            {gradingQueue.map((submission) => {
+              const assessment = assessmentsById.get(submission.assessment_id);
+
+              return (
+                <div key={submission.id} className="rounded-lg border border-line p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-ink">{submission.student_name}</p>
+                      <p className="text-sm text-slate-500">
+                        {courseCodeFor(overview, submission.course_id)} · {formatTime(submission.submitted_at)} · originality {(100 - submission.similarity_score * 100).toFixed(0)}%
+                      </p>
+                    </div>
+                    <Badge className={riskClasses(submission.status)}>{friendlyStatus(submission.status)}</Badge>
                   </div>
-                  <Badge className={riskClasses(submission.status)}>{friendlyStatus(submission.status)}</Badge>
-                </div>
-                <p className="mt-3 text-sm text-slate-600">{submission.text}</p>
-                {suggestion[submission.id] ? (
-                  <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
-                    <FormattedAiText content={suggestion[submission.id]} />
+                  {assessment ? (
+                    <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                      <span>{assessment.title}</span>
+                      <span>{assessment.type} · {assessment.weight}%</span>
+                      <span>Due {assessment.due_date} · {assessment.max_score} pts</span>
+                    </div>
+                  ) : null}
+                  <p className="mt-3 text-sm text-slate-600">{submission.text}</p>
+                  {assessment ? <p className="mt-2 text-xs text-slate-500">Rubric: {assessment.rubric}</p> : null}
+                  {suggestion[submission.id] ? (
+                    <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+                      <FormattedAiText content={suggestion[submission.id]} />
+                    </div>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => void handleSuggest(submission.id)}
+                      disabled={working === submission.id}
+                      className="inline-flex items-center gap-2 rounded-lg border border-ink bg-white px-3 py-2 text-sm font-semibold text-ink disabled:opacity-60"
+                    >
+                      <Bot className="h-4 w-4" aria-hidden="true" />
+                      Draft Feedback
+                    </button>
+                    <button
+                      onClick={() => void handleApply(submission.id)}
+                      disabled={working === submission.id || !suggestion[submission.id]}
+                      className="inline-flex items-center gap-2 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      Save Suggested Grade
+                    </button>
                   </div>
-                ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => void handleSuggest(submission.id)}
-                    disabled={working === submission.id}
-                    className="inline-flex items-center gap-2 rounded-lg border border-ink bg-white px-3 py-2 text-sm font-semibold text-ink disabled:opacity-60"
-                  >
-                    <Bot className="h-4 w-4" aria-hidden="true" />
-                    Draft Feedback
-                  </button>
-                  <button
-                    onClick={() => void handleApply(submission.id)}
-                    disabled={working === submission.id || !suggestion[submission.id]}
-                    className="inline-flex items-center gap-2 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                  >
-                    <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                    Save Suggested Grade
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {!gradingQueue.length ? (
               <div className="rounded-lg border border-dashed border-line bg-slate-50 p-8 text-center text-sm text-slate-500">
                 All submitted work has been reviewed.
@@ -1598,9 +1656,95 @@ function SkillGapPanel({ overview, id }: { overview: Overview; id?: string }) {
   );
 }
 
-function ChangeManagementPanel({ overview }: { overview: Overview }) {
+function KnowledgeContinuityPanel({ overview }: { overview: Overview }) {
   return (
-    <Panel title="Change Management Console" eyebrow={overview.change_management.framework} icon={Users}>
+    <Panel id="knowledge-risk" title="Knowledge Continuity" eyebrow="Courses that need teaching backup" icon={AlertTriangle}>
+      <div className="space-y-3">
+        {overview.knowledge_continuity.map((item) => (
+          <div key={item.course} className="rounded-lg border border-line p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-ink">{item.course}</p>
+                <p className="text-sm text-slate-500">
+                  {item.department} · {item.faculty} · {item.sole_instructor_terms} sole-instructor terms
+                </p>
+              </div>
+              <Badge className={riskClasses(item.severity)}>{item.severity}</Badge>
+            </div>
+            <div className="mt-3">
+              <Signal label="Continuity risk" value={item.risk_score} />
+            </div>
+            <p className="mt-3 text-sm text-slate-600">Retirement window: {item.retirement_window}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {item.suggestions.map((suggestion) => (
+                <Badge key={suggestion} className="border-amber-200 bg-amber-50 text-amber-800">{suggestion}</Badge>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function GamificationPanel({ overview }: { overview: Overview }) {
+  const rewards = overview.gamification;
+  const progress = Math.round((rewards.xp / rewards.next_level_xp) * 100);
+
+  return (
+    <Panel id="learning-rewards" title="Learning Rewards" eyebrow="Participation, badges, and perks" icon={WalletCards}>
+      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-lg border border-line p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm text-slate-500">Level {rewards.level}</p>
+              <p className="text-3xl font-semibold text-ink">{rewards.xp} XP</p>
+            </div>
+            <Badge className="border-sky-200 bg-sky-50 text-sky-800">Rank #{rewards.rank}</Badge>
+          </div>
+          <div className="mt-4">
+            <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500">
+              <span>Next level</span>
+              <span>{rewards.next_level_xp - rewards.xp} XP left</span>
+            </div>
+            <ProgressBar value={progress} tone="bg-sky-500" />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {rewards.badges.map((badge) => (
+              <Badge key={badge} className="border-emerald-200 bg-emerald-50 text-emerald-800">{badge}</Badge>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-line p-4">
+            <p className="font-semibold text-ink">Recent XP</p>
+            <div className="mt-3 space-y-2">
+              {rewards.wallet_events.map((event) => (
+                <div key={`${event.label}-${event.date}`} className="flex justify-between gap-3 text-sm">
+                  <span className="text-slate-600">{event.label}</span>
+                  <span className="font-semibold text-ink">+{event.xp}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-lg border border-line p-4">
+            <p className="font-semibold text-ink">Perks</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {rewards.redeemable_perks.map((perk) => (
+                <Badge key={perk} className="border-slate-200 bg-slate-50 text-slate-700">{perk}</Badge>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
+function ChangeManagementPanel({ overview, id }: { overview: Overview; id?: string }) {
+  return (
+    <Panel id={id} title="Change Management Console" eyebrow={overview.change_management.framework} icon={Users}>
       <div className="grid gap-3">
         {overview.change_management.rollout.map((stage) => (
           <div key={stage.stage} className="rounded-lg border border-line p-4">
@@ -1618,6 +1762,17 @@ function ChangeManagementPanel({ overview }: { overview: Overview }) {
             <p className="font-semibold text-ink">{champion.name}</p>
             <p className="text-sm text-slate-500">{champion.department}</p>
             <p className="mt-2 text-sm text-slate-600">{champion.impact}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-3">
+        {overview.change_management.training_sessions.map((session) => (
+          <div key={session.title} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+            <div>
+              <p className="font-semibold text-ink">{session.title}</p>
+              <p className="text-sm text-slate-500">{session.date} · {session.attendance} attendees</p>
+            </div>
+            <Badge className={riskClasses(session.status)}>{session.status}</Badge>
           </div>
         ))}
       </div>
@@ -1659,12 +1814,7 @@ function AuditPanel({ overview, id = "audit-trail" }: { overview: Overview; id?:
 }
 
 function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "loading" | "live" | "offline" }) {
-  const areaData = [
-    { month: "Jan", storage: 18, requests: 22 },
-    { month: "Feb", storage: 22, requests: 31 },
-    { month: "Mar", storage: 27, requests: 38 },
-    { month: "Apr", storage: 34, requests: 45 },
-  ];
+  const areaData = overview.capacity_monitor;
 
   return (
     <div className="space-y-5">
@@ -1677,7 +1827,7 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
         <MetricCard label="API State" value={apiState} delta={API_BASE.replace("http://", "")} tone="green" />
         <MetricCard label="Groq Model" value="Ready" delta={overview.system.groq_model} tone="blue" />
         <MetricCard label="Cost" value="$0" delta="local only" tone="green" />
-        <MetricCard label="Privacy" value="RBAC" delta="audit logged" tone="amber" />
+        <MetricCard label="Privacy" value="RBAC" delta={`${overview.audit_log.length} audit events`} tone="amber" />
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
@@ -1710,8 +1860,13 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
                 <Tooltip />
                 <Area type="monotone" dataKey="storage" stroke="#0ea5e9" fill="url(#storage)" />
                 <Line type="monotone" dataKey="requests" stroke="#10b981" strokeWidth={3} />
+                <Line type="monotone" dataKey="latency" stroke="#f59e0b" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
+          </div>
+          <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+            <span>{areaData.at(-1)?.requests ?? 0}k monthly requests</span>
+            <span>{areaData.at(-1)?.errors ?? 0} reported errors this month</span>
           </div>
         </Panel>
       </div>

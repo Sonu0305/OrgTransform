@@ -86,6 +86,10 @@ export const localOverview: Overview = {
     { id: "enr-001", student_id: "stu-aarav", course_id: "cs201", status: "Active", progress: 72, deadline_risk: "Low" },
     { id: "enr-002", student_id: "stu-aarav", course_id: "ai310", status: "Active", progress: 54, deadline_risk: "Medium" },
   ],
+  assessments: [
+    { id: "asm-101", course_id: "cs201", title: "Graph Algorithms Project", type: "Project", max_score: 100, due_date: "2026-05-04", rubric: "Correctness 40, complexity analysis 25, tests 20, clarity 15", weight: 30 },
+    { id: "asm-201", course_id: "ai310", title: "AI Governance Memo", type: "Assignment", max_score: 50, due_date: "2026-05-08", rubric: "Policy grounding 35, risk analysis 35, writing clarity 30", weight: 25 },
+  ],
   submissions: [
     {
       id: "sub-301",
@@ -111,8 +115,8 @@ export const localOverview: Overview = {
     { department: "Civil Engineering", role: "Faculty", login_frequency: 42, feature_depth: 36, forum_participation: 27, score: 35.1, band: "Critical", sentiment: 0.22, negative_clusters: ["Teachers need help moving assignments online"] },
   ],
   process_debt: [
-    { workflow: "Course Approval", score: 15.2, percentile: 88, status: "Red", trend: [{ month: "Jan", score: 18.4 }, { month: "Apr", score: 15.2 }], recommendations: ["Remove one repeated review step"] },
-    { workflow: "Posting Grades", score: 7.9, percentile: 54, status: "Amber", trend: [{ month: "Jan", score: 9.1 }, { month: "Apr", score: 7.9 }], recommendations: ["Notify reviewers at the same time"] },
+    { workflow: "Course Approval", steps: 7, touch_weight: 1.4, revision_count: 5, avg_approval_days: 9.8, score: 15.2, percentile: 88, status: "Red", trend: [{ month: "Jan", score: 18.4 }, { month: "Apr", score: 15.2 }], recommendations: ["Remove one repeated review step"] },
+    { workflow: "Posting Grades", steps: 5, touch_weight: 1.1, revision_count: 2, avg_approval_days: 4.5, score: 7.9, percentile: 54, status: "Amber", trend: [{ month: "Jan", score: 9.1 }, { month: "Apr", score: 7.9 }], recommendations: ["Notify reviewers at the same time"] },
   ],
   decision_map: {
     nodes: [
@@ -183,6 +187,12 @@ export const localOverview: Overview = {
   free_tier_stack: [
     { service: "Backend", provider: "FastAPI + Uvicorn", status: "Local", limit: "No cloud cost" },
     { service: "LLM", provider: "Groq Chat Completions", status: "Configured by GROQ_API_KEY", limit: "Local guidance when unavailable" },
+  ],
+  capacity_monitor: [
+    { month: "Jan", storage: 18, requests: 22, latency: 112, errors: 1 },
+    { month: "Feb", storage: 22, requests: 31, latency: 105, errors: 0 },
+    { month: "Mar", storage: 27, requests: 38, latency: 98, errors: 1 },
+    { month: "Apr", storage: 34, requests: 45, latency: 92, errors: 0 },
   ],
   api_endpoints: [
     "GET /health",

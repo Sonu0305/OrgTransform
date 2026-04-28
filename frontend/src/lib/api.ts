@@ -11,6 +11,7 @@ export type User = {
   email: string;
   bio: string;
   skills: string[];
+  social_links?: Record<string, string>;
 };
 
 export type Course = {
@@ -21,6 +22,7 @@ export type Course = {
   department: string;
   term: string;
   credits: number;
+  faculty_ids?: string[];
   faculty: string[];
   skills: string[];
   prerequisites: string[];
@@ -28,6 +30,7 @@ export type Course = {
   capacity: number;
   enrolled: number;
   waitlist: number;
+  syllabus_url?: string;
   adoption: number;
   average_grade: number;
 };
@@ -55,6 +58,17 @@ export type Submission = {
   feedback: string;
 };
 
+export type Assessment = {
+  id: string;
+  course_id: string;
+  title: string;
+  type: string;
+  max_score: number;
+  due_date: string;
+  rubric: string;
+  weight: number;
+};
+
 export type HeatmapCell = {
   department: string;
   role: string;
@@ -69,11 +83,16 @@ export type HeatmapCell = {
 
 export type ProcessDebt = {
   workflow: string;
+  steps: number;
+  touch_weight: number;
+  revision_count: number;
+  avg_approval_days: number;
   score: number;
   percentile: number;
   status: string;
   trend: { month: string; score: number }[];
   recommendations: string[];
+  last_action?: { action: string; actor: string; timestamp: string };
 };
 
 export type Pathway = {
@@ -110,6 +129,7 @@ export type Overview = {
   users: Record<RoleKey, User>;
   courses: Course[];
   enrollments: Enrollment[];
+  assessments: Assessment[];
   submissions: Submission[];
   gradebook: {
     course: string;
@@ -169,6 +189,7 @@ export type Overview = {
   audit_log: { timestamp: string; actor: string; role: string; action: string; risk: string }[];
   kpis: { label: string; value: string; delta: string; tone: string }[];
   free_tier_stack: { service: string; provider: string; status: string; limit: string }[];
+  capacity_monitor: { month: string; storage: number; requests: number; latency: number; errors: number }[];
   api_endpoints: string[];
   system: {
     groq_configured: boolean;
