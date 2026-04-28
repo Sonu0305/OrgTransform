@@ -129,6 +129,29 @@ const navByRole: Record<RoleKey, { label: string; icon: typeof Activity; id: str
   ],
 };
 
+const sidebarDetailsByRole: Record<RoleKey, { label: string; value: string }[]> = {
+  admin: [
+    { label: "Live focus", value: "Campus KPIs, slow approvals, and change ownership" },
+    { label: "Next decision", value: "Assign owners where workflow load is highest" },
+    { label: "Proof shown", value: "Usage signals, approval path, and audit history" },
+  ],
+  student: [
+    { label: "Live focus", value: "Study progress, open courses, and certificate proof" },
+    { label: "Next action", value: "Finish the recommended step, then register if seats are open" },
+    { label: "Proof shown", value: "Grades, badges, course progress, and verified certificates" },
+  ],
+  faculty: [
+    { label: "Live focus", value: "Active classes, submitted work, and course gaps" },
+    { label: "Next action", value: "Draft feedback, review it, then save the final grade" },
+    { label: "Proof shown", value: "Class engagement, rubric context, and alumni feedback" },
+  ],
+  it: [
+    { label: "Live focus", value: "System health, capacity, APIs, and privacy posture" },
+    { label: "Next action", value: "Confirm service status and review the latest audit trail" },
+    { label: "Proof shown", value: "Free-tier map, endpoint inventory, and compliance controls" },
+  ],
+};
+
 type SearchItem = {
   id: string;
   title: string;
@@ -867,8 +890,8 @@ function AppShell({
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1380px] gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[96px] xl:h-fit">
+      <div className="mx-auto grid max-w-[1380px] items-start gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[250px_minmax(0,1fr)]">
+        <aside className="thin-scrollbar flex rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[96px] xl:h-[calc(100vh-116px)] xl:max-h-[calc(100vh-116px)] xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto">
           <div className="flex items-center gap-3 border-b border-line pb-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 via-emerald-500 to-amber-400 text-sm font-bold text-white shadow-sm">
               {user.avatar}
@@ -901,6 +924,30 @@ function AppShell({
               );
             })}
           </nav>
+
+          <div className="mt-5 flex min-h-[220px] flex-1 flex-col rounded-lg border border-line bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Workspace pulse</p>
+              <Activity className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+            </div>
+            <div className="mt-3 space-y-2">
+              {sidebarDetailsByRole[activeRole].map((detail) => (
+                <div key={detail.label} className="rounded-md bg-white px-3 py-2 shadow-sm">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{detail.label}</p>
+                  <p className="mt-1 text-sm font-medium leading-5 text-slate-700">{detail.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-auto pt-3">
+              <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-emerald-900">Ready for demo</p>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-emerald-800">Every role page now carries context through the full sidebar height.</p>
+              </div>
+            </div>
+          </div>
 
           {error ? <p className="mt-4 text-xs text-amber-700">Local service unavailable: {error.slice(0, 110)}</p> : null}
         </aside>
