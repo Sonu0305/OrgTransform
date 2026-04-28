@@ -566,10 +566,10 @@ function LoginScreen({
             <Badge
               className={
                 apiState === "live"
-                  ? "neo-status-success"
+                  ? "neo-header-control neo-status-success whitespace-nowrap px-4"
                   : apiState === "loading"
-                    ? "neo-status-info"
-                    : "neo-status-warning"
+                    ? "neo-header-control neo-status-info whitespace-nowrap px-4"
+                    : "neo-header-control neo-status-warning whitespace-nowrap px-4"
               }
             >
               System {apiState === "live" ? "online" : apiState === "offline" ? "offline" : "checking"}
@@ -898,15 +898,15 @@ function AppShell({
             <Badge
               className={
                 apiState === "live"
-                  ? "neo-status-success"
+                  ? "neo-header-control neo-status-success whitespace-nowrap px-4"
                   : apiState === "loading"
-                    ? "neo-status-info"
-                    : "neo-status-warning"
+                    ? "neo-header-control neo-status-info whitespace-nowrap px-4"
+                    : "neo-header-control neo-status-warning whitespace-nowrap px-4"
               }
             >
               System {apiState === "live" ? "online" : apiState === "offline" ? "offline" : "checking"}
             </Badge>
-            <Badge className={overview.system.groq_configured ? "neo-status-success" : "border-line bg-surface/70 text-text/85"}>
+            <Badge className={clsx("neo-header-control whitespace-nowrap px-4", overview.system.groq_configured ? "neo-status-success" : "border-line bg-surface/70 text-text/85")}>
               AI {overview.system.groq_configured ? "ready" : "local"}
             </Badge>
             <button
@@ -917,7 +917,7 @@ function AppShell({
               <RefreshCw className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
-              className="neo-button px-3 py-2"
+              className="neo-button neo-header-control whitespace-nowrap px-4"
               onClick={() => setRole(null)}
             >
               Change login
