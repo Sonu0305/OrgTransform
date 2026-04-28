@@ -76,10 +76,113 @@ def visible_api_surface() -> list[str]:
     return db.API_ENDPOINTS
 
 
-def ai_context_payload() -> str:
-    payload = db.snapshot()
-    payload["system"] = system_payload()
+def compact_course(course: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": course["id"],
+        "code": course["code"],
+        "title": course["title"],
+        "department": course["department"],
+        "term": course["term"],
+        "credits": course["credits"],
+        "faculty": course["faculty"],
+        "skills": course["skills"],
+        "capacity": course["capacity"],
+        "enrolled": course["enrolled"],
+        "waitlist": course["waitlist"],
+        "average_grade": course["average_grade"],
+        "adoption": course["adoption"],
+    }
+
+
+def ai_context_payload(student_id: str = "stu-aarav", course_id: str | None = None) -> str:
+    student_user = next((user for user in db.USERS.values() if user["id"] == student_id), db.USERS["student"])
+    student_enrollments = [item for item in db.ENROLLMENTS if item["student_id"] == student_id]
+    student_course_ids = {item["course_id"] for item in student_enrollments}
+    focused_course_ids = set(student_course_ids)
+    if course_id:
+        focused_course_ids.add(course_id)
+
+    courses = [compact_course(course) for course in db.COURSES if course["id"] in focused_course_ids]
+    all_course_catalog = [
+        {
+            "id": course["id"],
+            "code": course["code"],
+            "title": course["title"],
+            "department": course["department"],
+            "skills": course["skills"],
+            "seats_open": max(course["capacity"] - course["enrolled"], 0),
+        }
+        for course in db.COURSES
+    ]
+
+    submissions = [
+        {
+            "assessment_id": item["assessment_id"],
+            "course_id": item["course_id"],
+            "status": item["status"],
+            "score": item["score"],
+            "feedback": item["feedback"],
+            "submitted_at": item["submitted_at"],
+        }
+        for item in db.SUBMISSIONS
+        if item["student_id"] == student_id or item["course_id"] in focused_course_ids
+    ]
+
+    payload = {
+        "student": student_user,
+        "all_users": db.USERS,
+        "current_course_id": course_id,
+        "student_enrollments": student_enrollments,
+        "student_courses": courses,
+        "course_catalog": all_course_catalog,
+        "assessments": [item for item in db.ASSESSMENTS if item["course_id"] in focused_course_ids],
+        "submissions": submissions,
+        "gradebook": db.GRADEBOOK,
+        "learning_pathway": db.PATHWAYS.get(student_id),
+        "certificates": [item for item in db.CERTIFICATES if item["student_id"] == student_id],
+        "campus_kpis": db.KPI_CARDS,
+        "department_usage": db.HEATMAP,
+        "workflow_delays": db.PROCESS_DEBT,
+        "approval_route": db.DECISION_MAP,
+        "course_improvement_gaps": db.ALUMNI_SKILL_GAPS,
+        "change_management": db.CHANGE_MANAGEMENT,
+        "api_surface": db.API_ENDPOINTS,
+        "system": system_payload(),
+        "recent_audit_log": db.AUDIT_LOG[:12],
+    }
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
+
+
+def student_score_summary() -> str:
+    graded = [item for item in db.GRADEBOOK if item["score"] is not None]
+    pending = [item for item in db.GRADEBOOK if item["score"] is None]
+    if not graded:
+        return "No graded scores are available yet."
+    lines = [
+        f"- **{item['course']} / {item['assessment']}:** {item['score']}/{item['max_score']} ({round((item['score'] / item['max_score']) * 100, 1)}%)"
+        for item in graded
+    ]
+    if pending:
+        lines.append("- **Pending:** " + ", ".join(f"{item['course']} / {item['assessment']}" for item in pending))
+    return "\n".join(lines)
+
+
+def tutor_fallback(question: str, course: dict[str, Any]) -> str:
+    if any(word in question.lower() for word in ["score", "grade", "marks", "gpa", "result"]):
+        return (
+            "### Current scores\n"
+            f"{student_score_summary()}\n\n"
+            f"- **Current course:** {course['code']} {course['title']}.\n"
+            "- **Note:** Pending assessments do not have final scores yet."
+        )
+
+    return (
+        "### Best next step\n"
+        f"- Connect the question to **{course['code']} {course['title']}** skills: {', '.join(course['skills'])}.\n"
+        "- Review the rubric and isolate the smallest concept that feels unclear.\n"
+        "- Try one worked example, then compare your reasoning against the solution pattern.\n\n"
+        "**Escalate if:** the syllabus or assignment wording is ambiguous."
+    )
 
 
 @app.get("/health")
@@ -299,18 +402,12 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
     history = db.CHAT_HISTORY.setdefault(course_id, [])
     history.append({"role": "user", "content": payload.message, "provider": "student"})
 
-    fallback = (
-        "### Best next step\n"
-        f"- Connect the question to **{course['code']} {course['title']}** skills: {', '.join(course['skills'])}.\n"
-        "- Review the rubric and isolate the smallest concept that feels unclear.\n"
-        "- Try one worked example, then compare your reasoning against the solution pattern.\n\n"
-        "**Escalate if:** the syllabus or assignment wording is ambiguous."
-    )
+    fallback = tutor_fallback(payload.message, course)
     messages = [
         {
             "role": "system",
             "content": (
-                "You are the CMIS AI tutor and campus assistant. You can use the full CMIS JSON context supplied by the app, "
+                "You are the CMIS AI tutor and campus assistant. You can use the compact CMIS JSON context supplied by the app, "
                 "including users, courses, enrollments, submissions, gradebook, analytics, certificates, audit records, API surface, and system status. "
                 "Answer questions from that data whenever possible. Do not invent facts; if the data does not contain an answer, say what is missing and suggest where to check. "
                 "Never expose environment variables, API keys, or secrets. "
@@ -321,7 +418,7 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
         {
             "role": "user",
             "content": (
-                f"Full CMIS app context JSON:\n{ai_context_payload()}\n\n"
+                f"CMIS app context JSON:\n{ai_context_payload(payload.student_id, course_id)}\n\n"
                 f"Course: {course['code']} - {course['title']}\n"
                 f"Description: {course['description']}\n"
                 f"Skills: {', '.join(course['skills'])}\n"
@@ -359,7 +456,7 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
         {
             "role": "system",
             "content": (
-                "You are CMIS AI-assisted grading. You can use the full CMIS JSON context supplied by the app, "
+                "You are CMIS AI-assisted grading. You can use the compact CMIS JSON context supplied by the app, "
                 "including the user, course, gradebook, submissions, certificates, analytics, audit records, API surface, and system status. "
                 "Return a fair rubric-aware suggestion with short feedback. Do not invent facts; use the supplied data and say when evidence is missing. "
                 "Never expose environment variables, API keys, or secrets. "
@@ -370,7 +467,7 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
         {
             "role": "user",
             "content": (
-                f"Full CMIS app context JSON:\n{ai_context_payload()}\n\n"
+                f"CMIS app context JSON:\n{ai_context_payload(submission['student_id'], submission['course_id'])}\n\n"
                 f"Assessment: {assessment['title']}\nRubric: {assessment['rubric']}\n"
                 f"Max score: {assessment['max_score']}\nSimilarity score: {submission['similarity_score']}\n"
                 f"Student work: {submission['text']}"
