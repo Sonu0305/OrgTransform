@@ -8,12 +8,6 @@ class EnrollmentRequest(BaseModel):
     course_id: str
 
 
-class SubmissionRequest(BaseModel):
-    assessment_id: str
-    student_id: str = "stu-aarav"
-    text: str = Field(min_length=10)
-
-
 class GradePatch(BaseModel):
     score: float
     feedback: str
@@ -29,8 +23,8 @@ class GradingSuggestionRequest(BaseModel):
     submission_id: str
 
 
-class CertificateIssueRequest(BaseModel):
-    student_id: str
-    course: str
-    grade: str
-
+class WorkflowActionRequest(BaseModel):
+    workflow: str
+    action: str
+    actor: str = "Rajiv Menon"
+    role: str = "Admin"

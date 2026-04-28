@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -11,12 +10,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.config import get_settings
 from backend.app.data import mock_data as db
 from backend.app.schemas import (
-    CertificateIssueRequest,
     ChatMessage,
     EnrollmentRequest,
     GradePatch,
     GradingSuggestionRequest,
-    SubmissionRequest,
+    WorkflowActionRequest,
 )
 from backend.app.services.groq_client import groq_client
 
@@ -65,6 +63,18 @@ def add_audit(actor: str, role: str, action: str, risk: str = "Low") -> None:
     db.persist()
 
 
+def system_payload() -> dict[str, Any]:
+    return {
+        "groq_configured": groq_client.configured,
+        "groq_model": settings.groq_model,
+        "local_mode": True,
+    }
+
+
+def visible_api_surface() -> list[str]:
+    return db.API_ENDPOINTS
+
+
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {
@@ -79,12 +89,59 @@ def health() -> dict[str, Any]:
 @app.get(f"{settings.api_prefix}/overview")
 def overview() -> dict[str, Any]:
     payload = db.snapshot()
-    payload["system"] = {
-        "groq_configured": groq_client.configured,
-        "groq_model": settings.groq_model,
-        "local_mode": True,
-    }
+    payload["system"] = system_payload()
     return payload
+
+
+@app.get(f"{settings.api_prefix}/search")
+def search(q: str = Query("", min_length=0), role: str | None = Query(None, pattern="^(student|faculty|admin|it)$")) -> list[dict[str, Any]]:
+    needle = q.strip().lower()
+    items: list[dict[str, Any]] = []
+
+    for course in db.COURSES:
+        items.append(
+            {
+                "type": "course",
+                "title": f"{course['code']} {course['title']}",
+                "subtitle": f"{course['department']} course",
+                "role": "student",
+                "section_id": "my-courses",
+                "keywords": " ".join([course["description"], *course["skills"], *course["faculty"]]),
+            }
+        )
+
+    for role_key, user in db.USERS.items():
+        items.append(
+            {
+                "type": "person",
+                "title": user["name"],
+                "subtitle": f"{user['role']} · {user['department']}",
+                "role": role_key,
+                "section_id": "campus-kpis" if role_key == "admin" else "course-studio" if role_key == "faculty" else "local-stack" if role_key == "it" else "learning-path",
+                "keywords": " ".join([user["email"], user["bio"], *user["skills"]]),
+            }
+        )
+
+    for workflow in db.PROCESS_DEBT:
+        items.append(
+            {
+                "type": "workflow",
+                "title": workflow["workflow"],
+                "subtitle": f"Delay score {workflow['score']}",
+                "role": "admin",
+                "section_id": "process-debt",
+                "keywords": " ".join(workflow["recommendations"]),
+            }
+        )
+
+    visible = [item for item in items if role is None or item["role"] == role]
+    if needle:
+        visible = [
+            item
+            for item in visible
+            if needle in f"{item['title']} {item['subtitle']} {item['keywords']}".lower()
+        ]
+    return visible[:12]
 
 
 @app.get(f"{settings.api_prefix}/users/me")
@@ -116,11 +173,6 @@ def list_courses(
     if skill:
         courses = [course for course in courses if skill in course["skills"]]
     return courses
-
-
-@app.get(f"{settings.api_prefix}/courses/{{course_id}}")
-def get_course(course_id: str) -> dict[str, Any]:
-    return find_course(course_id)
 
 
 @app.post(f"{settings.api_prefix}/enrollments")
@@ -155,50 +207,6 @@ def enroll(payload: EnrollmentRequest) -> dict[str, Any]:
     return {"status": status.lower(), "enrollment": enrollment, "course": course}
 
 
-@app.delete(f"{settings.api_prefix}/enrollments/{{enrollment_id}}")
-def drop_enrollment(enrollment_id: str) -> dict[str, Any]:
-    index = next((idx for idx, item in enumerate(db.ENROLLMENTS) if item["id"] == enrollment_id), None)
-    if index is None:
-        raise HTTPException(status_code=404, detail="Enrollment not found")
-    enrollment = db.ENROLLMENTS.pop(index)
-    course = find_course(enrollment["course_id"])
-    if enrollment["status"] == "Active":
-        course["enrolled"] = max(0, course["enrolled"] - 1)
-    else:
-        course["waitlist"] = max(0, course["waitlist"] - 1)
-    add_audit("Aarav Sharma", "Student", f"Dropped enrollment for {course['code']}", "Medium")
-    return {"status": "dropped", "enrollment": enrollment}
-
-
-@app.get(f"{settings.api_prefix}/assessments/{{course_id}}")
-def assessments(course_id: str) -> list[dict[str, Any]]:
-    find_course(course_id)
-    return [assessment for assessment in db.ASSESSMENTS if assessment["course_id"] == course_id]
-
-
-@app.post(f"{settings.api_prefix}/submissions")
-def submit_work(payload: SubmissionRequest) -> dict[str, Any]:
-    assessment = next((item for item in db.ASSESSMENTS if item["id"] == payload.assessment_id), None)
-    if not assessment:
-        raise HTTPException(status_code=404, detail="Assessment not found")
-    submission = {
-        "id": f"sub-{uuid4().hex[:8]}",
-        "assessment_id": payload.assessment_id,
-        "student_id": payload.student_id,
-        "student_name": "Aarav Sharma",
-        "course_id": assessment["course_id"],
-        "status": "Submitted",
-        "submitted_at": now_iso(),
-        "text": payload.text,
-        "similarity_score": 0.09,
-        "score": None,
-        "feedback": "",
-    }
-    db.SUBMISSIONS.insert(0, submission)
-    add_audit("Aarav Sharma", "Student", f"Submitted {assessment['title']}")
-    return submission
-
-
 @app.patch(f"{settings.api_prefix}/submissions/{{submission_id}}/grade")
 def grade_submission(submission_id: str, payload: GradePatch) -> dict[str, Any]:
     submission = find_submission(submission_id)
@@ -209,31 +217,73 @@ def grade_submission(submission_id: str, payload: GradePatch) -> dict[str, Any]:
     return submission
 
 
-@app.get(f"{settings.api_prefix}/analytics/heatmap")
-def heatmap() -> list[dict[str, Any]]:
+@app.get(f"{settings.api_prefix}/admin/campus-kpis")
+def campus_kpis() -> list[dict[str, Any]]:
+    return db.KPI_CARDS
+
+
+@app.get(f"{settings.api_prefix}/admin/departments-needing-help")
+def departments_needing_help() -> list[dict[str, Any]]:
     return db.HEATMAP
 
 
-@app.get(f"{settings.api_prefix}/analytics/process-debt")
-def process_debt() -> list[dict[str, Any]]:
+@app.get(f"{settings.api_prefix}/admin/workflow-delays")
+def workflow_delays() -> list[dict[str, Any]]:
     return db.PROCESS_DEBT
 
 
-@app.get(f"{settings.api_prefix}/analytics/decision-map")
-def decision_map() -> dict[str, Any]:
+@app.post(f"{settings.api_prefix}/admin/workflow-actions")
+def workflow_action(payload: WorkflowActionRequest) -> dict[str, Any]:
+    workflow = next((item for item in db.PROCESS_DEBT if item["workflow"] == payload.workflow), None)
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+
+    workflow["last_action"] = {
+        "action": payload.action,
+        "actor": payload.actor,
+        "timestamp": now_iso(),
+    }
+    add_audit(payload.actor, payload.role, f"{payload.action} for {payload.workflow}", "Low" if workflow["status"] == "Green" else "Medium")
+    return {"status": "saved", "workflow": workflow}
+
+
+@app.get(f"{settings.api_prefix}/admin/approval-route")
+def approval_route() -> dict[str, Any]:
     return db.DECISION_MAP
 
 
-@app.get(f"{settings.api_prefix}/analytics/knowledge-continuity")
-def knowledge_continuity() -> list[dict[str, Any]]:
-    return db.KNOWLEDGE_CONTINUITY
-
-
-@app.get(f"{settings.api_prefix}/pathways/{{student_id}}")
-def pathway(student_id: str) -> dict[str, Any]:
+@app.get(f"{settings.api_prefix}/student/{{student_id}}/study-plan")
+def study_plan(student_id: str) -> dict[str, Any]:
     if student_id not in db.PATHWAYS:
         raise HTTPException(status_code=404, detail="Pathway not found")
     return db.PATHWAYS[student_id]
+
+
+@app.get(f"{settings.api_prefix}/student/{{student_id}}/course-registration")
+def student_course_registration(student_id: str) -> dict[str, Any]:
+    enrollments = [item for item in db.ENROLLMENTS if item["student_id"] == student_id]
+    return {"courses": db.COURSES, "enrollments": enrollments}
+
+
+@app.get(f"{settings.api_prefix}/student/{{student_id}}/certificates")
+def student_certificates(student_id: str) -> list[dict[str, Any]]:
+    return [item for item in db.CERTIFICATES if item["student_id"] == student_id]
+
+
+@app.get(f"{settings.api_prefix}/faculty/{{faculty_id}}/classes")
+def faculty_classes(faculty_id: str) -> list[dict[str, Any]]:
+    return [course for course in db.COURSES if faculty_id in course.get("faculty_ids", [])]
+
+
+@app.get(f"{settings.api_prefix}/faculty/{{faculty_id}}/grading-queue")
+def faculty_grading_queue(faculty_id: str) -> list[dict[str, Any]]:
+    course_ids = {course["id"] for course in db.COURSES if faculty_id in course.get("faculty_ids", [])}
+    return [submission for submission in db.SUBMISSIONS if submission["course_id"] in course_ids and submission["status"] != "Graded"]
+
+
+@app.get(f"{settings.api_prefix}/faculty/course-improvements")
+def faculty_course_improvements() -> list[dict[str, Any]]:
+    return db.ALUMNI_SKILL_GAPS
 
 
 @app.post(f"{settings.api_prefix}/chat/{{course_id}}/message")
@@ -280,11 +330,6 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
     history.append(assistant_message)
     add_audit("Aarav Sharma", "Student", f"Asked AI tutor in {course['code']}")
     return {"message": assistant_message, "history": history[-8:]}
-
-
-@app.get(f"{settings.api_prefix}/chat/{{course_id}}/history")
-def chat_history(course_id: str) -> list[dict[str, Any]]:
-    return db.CHAT_HISTORY.get(course_id, [])
 
 
 @app.post(f"{settings.api_prefix}/grading/suggest")
@@ -338,39 +383,46 @@ def verify_certificate(certificate_hash: str) -> dict[str, Any]:
     return {"verified": True, "status": certificate["status"], "certificate": certificate}
 
 
-@app.get(f"{settings.api_prefix}/certificates/{{student_id}}")
-def certificates(student_id: str) -> list[dict[str, Any]]:
-    return [item for item in db.CERTIFICATES if item["student_id"] == student_id]
-
-
-@app.post(f"{settings.api_prefix}/certificates/issue")
-def issue_certificate(payload: CertificateIssueRequest) -> dict[str, Any]:
-    raw = f"{payload.student_id}:{payload.course}:{payload.grade}:{now_iso()}".encode()
-    cert_hash = "0x" + hashlib.sha256(raw).hexdigest()
-    certificate = {
-        "id": f"cert-{uuid4().hex[:8]}",
-        "student_id": payload.student_id,
-        "course": payload.course,
-        "grade": payload.grade,
-        "issued_at": datetime.now(timezone.utc).date().isoformat(),
-        "hash": cert_hash,
-        "chain": "Local secure hash",
-        "tx_hash": "",
-        "status": "Tamper-evident",
-        "badges": [],
+@app.get(f"{settings.api_prefix}/it/system-health")
+def it_system_health() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "api_base": settings.api_prefix,
+        "app": settings.app_name,
+        **system_payload(),
     }
-    db.CERTIFICATES.insert(0, certificate)
-    add_audit("System", "IT Staff", f"Issued certificate hash for {payload.course}")
-    return certificate
 
 
-@app.get(f"{settings.api_prefix}/gamification/wallet")
-def gamification_wallet(student_id: str = "stu-aarav") -> dict[str, Any]:
-    if student_id != db.GAMIFICATION["student_id"]:
-        raise HTTPException(status_code=404, detail="Wallet not found")
-    return db.GAMIFICATION
+@app.get(f"{settings.api_prefix}/it/dependency-map")
+def it_dependency_map() -> list[dict[str, Any]]:
+    return db.FREE_TIER_STACK
 
 
-@app.get(f"{settings.api_prefix}/alumni/skill-gaps")
-def alumni_skill_gaps() -> list[dict[str, Any]]:
-    return db.ALUMNI_SKILL_GAPS
+@app.get(f"{settings.api_prefix}/it/capacity-monitor")
+def it_capacity_monitor() -> list[dict[str, Any]]:
+    return [
+        {"month": "Jan", "storage": 18, "requests": 22},
+        {"month": "Feb", "storage": 22, "requests": 31},
+        {"month": "Mar", "storage": 27, "requests": 38},
+        {"month": "Apr", "storage": 34, "requests": 45},
+    ]
+
+
+@app.get(f"{settings.api_prefix}/it/api-surface")
+def it_api_surface() -> list[str]:
+    return visible_api_surface()
+
+
+@app.get(f"{settings.api_prefix}/it/privacy-controls")
+def it_privacy_controls() -> list[dict[str, str]]:
+    return [
+        {"title": "RBAC", "detail": "Four role workspaces are scoped through explicit role endpoints."},
+        {"title": "Audit log", "detail": "Important write actions persist actor, role, action, risk, and timestamp."},
+        {"title": "Credential trust", "detail": "Certificates verify by SHA-256 compatible hashes."},
+        {"title": "Data portability", "detail": "Campus records are exported through JSON-backed feature endpoints."},
+    ]
+
+
+@app.get(f"{settings.api_prefix}/it/audit-trail")
+def it_audit_trail() -> list[dict[str, Any]]:
+    return db.AUDIT_LOG

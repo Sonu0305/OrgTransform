@@ -234,6 +234,13 @@ export function applyGrade(submissionId: string, score: number, feedback: string
   });
 }
 
+export function saveWorkflowAction(workflow: string, action: string) {
+  return request<{ status: string; workflow: ProcessDebt }>("/api/v1/admin/workflow-actions", {
+    method: "POST",
+    body: JSON.stringify({ workflow, action }),
+  });
+}
+
 export function verifyCertificate(hash: string) {
   return request<{ verified: boolean; status: string; certificate?: Certificate; hash?: string }>(
     `/api/v1/certificates/verify/${encodeURIComponent(hash)}`,

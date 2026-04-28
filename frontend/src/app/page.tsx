@@ -58,6 +58,7 @@ import {
   Overview,
   ProcessDebt,
   RoleKey,
+  saveWorkflowAction,
   sendTutorMessage,
   suggestGrade,
   verifyCertificate,
@@ -592,9 +593,9 @@ function LoginScreen({
   ];
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen lg:h-screen lg:overflow-hidden">
       <header className="border-b border-line bg-white/92 backdrop-blur">
-        <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink text-white">
               <GraduationCap className="h-6 w-6" aria-hidden="true" />
@@ -629,21 +630,21 @@ function LoginScreen({
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1380px] gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <section className="rounded-lg border border-line bg-white p-5 shadow-panel xl:sticky xl:top-5 xl:h-fit">
+      <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-61px)] xl:grid-cols-[300px_minmax(0,1fr)]">
+        <section className="rounded-lg border border-line bg-white p-4 shadow-panel xl:h-fit">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Select workspace</p>
-          <h2 className="mt-2 text-2xl font-semibold text-ink">Campus Course Hub</h2>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+          <h2 className="mt-2 text-xl font-semibold text-ink">Campus Course Hub</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
             Role-based access for registration, teaching review, academic operations, privacy, and campus workflow tracking.
           </p>
 
-          <div className="mt-5 divide-y divide-line rounded-lg border border-line bg-slate-50">
+          <div className="mt-4 divide-y divide-line rounded-lg border border-line bg-slate-50">
             {proofPoints.map((point) => {
               const Icon = point.icon;
               return (
-                <div key={point.label} className="flex items-center gap-3 px-3 py-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sky-600 shadow-sm">
-                    <Icon className="h-5 w-5" aria-hidden="true" />
+                <div key={point.label} className="flex items-center gap-3 px-3 py-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-sky-600 shadow-sm">
+                    <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-ink">{point.value}</span>
@@ -663,15 +664,15 @@ function LoginScreen({
           {error ? <p className="mt-3 text-xs leading-5 text-amber-700">Using local demo data: {error.slice(0, 120)}</p> : null}
         </section>
 
-        <section className="min-w-0">
-          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <section className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Available logins</p>
-              <h2 className="text-2xl font-semibold text-ink">Choose your role</h2>
+              <h2 className="text-xl font-semibold text-ink sm:text-2xl">Choose your role</h2>
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-2 xl:grid-rows-2">
             {roleOptions.map((option) => {
               const Icon = option.icon;
               const person = overview.users[option.key];
@@ -680,18 +681,18 @@ function LoginScreen({
                   key={option.key}
                   type="button"
                   onClick={() => onSelectRole(option.key)}
-                  className="group rounded-lg border border-line bg-white p-5 text-left shadow-panel transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+                  className="group flex min-h-[210px] flex-col rounded-lg border border-line bg-white p-4 text-left shadow-panel transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition group-hover:bg-ink group-hover:text-white">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition group-hover:bg-ink group-hover:text-white">
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <Badge className="border-slate-200 bg-slate-50 text-slate-700">{person.avatar}</Badge>
                   </div>
-                  <p className="mt-4 text-lg font-semibold text-ink">{option.loginTitle}</p>
+                  <p className="mt-3 text-lg font-semibold text-ink">{option.loginTitle}</p>
                   <p className="mt-1 text-sm font-medium text-slate-500">{person.name} · {person.department}</p>
-                  <p className="mt-3 min-h-[48px] text-sm leading-6 text-slate-600 md:min-h-[72px] xl:min-h-[48px]">{option.description}</p>
-                  <div className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-sm font-semibold text-ink">
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{option.description}</p>
+                  <div className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-sm font-semibold text-ink">
                     Enter workspace
                     <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
                   </div>
@@ -945,6 +946,21 @@ function AdminDashboard({ overview }: { overview: Overview }) {
     setSelected(visibleHeatmap[0] ?? overview.heatmap[0]);
   }, [overview.heatmap, visibleHeatmap]);
 
+  async function handleWorkflowAction(item: ProcessDebt) {
+    const action = item.status === "Green" ? "Monitoring note saved" : "Owner assigned";
+    setActionMessage("");
+    try {
+      await saveWorkflowAction(item.workflow, action);
+      setActionMessage(
+        item.status === "Green"
+          ? `${item.workflow}: monitoring note saved for the next weekly check.`
+          : `${item.workflow}: owner assigned and a follow-up check was added for this week.`,
+      );
+    } catch {
+      setActionMessage(`${item.workflow}: action could not be saved. Please try again.`);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {actionMessage ? <Notice>{actionMessage}</Notice> : null}
@@ -1040,13 +1056,7 @@ function AdminDashboard({ overview }: { overview: Overview }) {
               <ProcessDebtRow
                 key={item.workflow}
                 item={item}
-                onCreatePlan={() =>
-                  setActionMessage(
-                    item.status === "Green"
-                      ? `${item.workflow}: monitoring note saved for the next weekly check.`
-                      : `${item.workflow}: owner assigned and a follow-up check was added for this week.`,
-                  )
-                }
+                onCreatePlan={() => void handleWorkflowAction(item)}
               />
             ))}
           </div>
