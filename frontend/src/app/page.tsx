@@ -890,10 +890,10 @@ function AppShell({
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1380px] items-start gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="flex rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[96px] xl:min-h-[calc(100vh-116px)] xl:flex-col">
-          <div className="flex items-center gap-3 border-b border-line pb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 via-emerald-500 to-amber-400 text-sm font-bold text-white shadow-sm">
+      <div className="mx-auto grid w-full max-w-[1380px] min-w-0 items-start gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[minmax(0,250px)_minmax(0,1fr)]">
+        <aside className="thin-scrollbar flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[96px] xl:max-h-[calc(100vh-116px)] xl:overflow-y-auto">
+          <div className="flex min-w-0 items-center gap-3 border-b border-line pb-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 via-emerald-500 to-amber-400 text-sm font-bold text-white shadow-sm">
               {user.avatar}
             </div>
             <div className="min-w-0">
@@ -902,9 +902,9 @@ function AppShell({
             </div>
           </div>
 
-          <div className="mt-4 rounded-lg border border-sky-100 bg-sky-50 p-3">
+          <div className="mt-4 min-w-0 rounded-lg border border-sky-100 bg-sky-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-700">Role purpose</p>
-            <p className="mt-1 text-sm text-sky-900">{roleOptions.find((option) => option.key === role)?.demoPitch}</p>
+            <p className="mt-1 break-words text-sm text-sky-900">{roleOptions.find((option) => option.key === role)?.demoPitch}</p>
           </div>
 
           <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Jump to</p>
@@ -918,23 +918,23 @@ function AppShell({
                   onClick={() => scrollToSection(item.id)}
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-ink"
                 >
-                  <Icon className="h-4 w-4 text-slate-400" aria-hidden="true" />
-                  {item.label}
+                  <Icon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                  <span className="min-w-0 truncate">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          <div className="mt-5 flex min-h-fit flex-1 flex-col rounded-lg border border-line bg-slate-50 p-3">
+          <div className="mt-5 flex min-w-0 flex-1 flex-col rounded-lg border border-line bg-slate-50 p-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Workspace pulse</p>
+              <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Workspace pulse</p>
               <Activity className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
             </div>
             <div className="mt-3 space-y-2">
               {sidebarDetailsByRole[activeRole].map((detail) => (
-                <div key={detail.label} className="rounded-md bg-white px-3 py-2 shadow-sm">
+                <div key={detail.label} className="min-w-0 rounded-md bg-white px-3 py-2 shadow-sm">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{detail.label}</p>
-                  <p className="mt-1 text-sm font-medium leading-5 text-slate-700">{detail.value}</p>
+                  <p className="mt-1 break-words text-sm font-medium leading-5 text-slate-700">{detail.value}</p>
                 </div>
               ))}
             </div>
