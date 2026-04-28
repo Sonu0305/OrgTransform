@@ -316,7 +316,7 @@ function Panel({
 
 function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={clsx("neo-badge px-2.5 py-1 text-xs font-bold", className)}>
+    <span className={clsx("neo-badge min-w-0 max-w-full whitespace-normal break-words px-2.5 py-1 text-center text-xs font-bold leading-4", className)}>
       {children}
     </span>
   );
@@ -618,9 +618,9 @@ function LoginScreen({
             })}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            <Badge className="neo-status-success">Persistent records</Badge>
-            <Badge className={overview.system.groq_configured ? "neo-status-success" : "border-line bg-surface/70 text-text/85"}>
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-line pt-4">
+            <Badge className="neo-status-success w-full">Persistent records</Badge>
+            <Badge className={clsx("w-full", overview.system.groq_configured ? "neo-status-success" : "border-line bg-surface/70 text-text/85")}>
               AI {overview.system.groq_configured ? "ready" : "local"}
             </Badge>
           </div>
@@ -894,7 +894,7 @@ function AppShell({
 
           <GlobalSearch items={searchItems} onSelect={jumpTo} />
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <Badge
               className={
                 apiState === "live"
