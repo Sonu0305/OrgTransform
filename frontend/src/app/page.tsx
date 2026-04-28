@@ -891,7 +891,7 @@ function AppShell({
       </header>
 
       <div className="mx-auto grid w-full max-w-[1380px] min-w-0 items-start gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[minmax(0,250px)_minmax(0,1fr)]">
-        <aside className="thin-scrollbar flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[96px] xl:max-h-[calc(100vh-116px)] xl:overflow-y-auto">
+        <aside className="thin-scrollbar flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[85px] xl:max-h-[calc(100vh-105px)] xl:overflow-y-auto">
           <div className="flex min-w-0 items-center gap-3 border-b border-line pb-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 via-emerald-500 to-amber-400 text-sm font-bold text-white shadow-sm">
               {user.avatar}
@@ -999,12 +999,12 @@ function AdminDashboard({ overview }: { overview: Overview }) {
 
   return (
     <div className="space-y-5">
-      {actionMessage ? <Notice>{actionMessage}</Notice> : null}
       <RoleIntro
         title="Registrar checks whether the institution is running smoothly"
         description="This dashboard turns the PRD's organizational transformation idea into a simple story: course operations, adoption, approvals, and delays are visible in one place."
         steps={["Review campus health", "Find slow workflows", "Assign an owner"]}
       />
+      {actionMessage ? <Notice>{actionMessage}</Notice> : null}
       <div id="campus-kpis" className="grid scroll-mt-24 gap-4 md:grid-cols-2 2xl:grid-cols-5">
         {overview.kpis.map((item) => (
           <MetricCard key={item.label} {...item} />
@@ -1323,12 +1323,12 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
 
   return (
     <div className="space-y-5">
-      {actionMessage ? <Notice tone={actionMessage.includes("could not") || actionMessage.includes("No certificate") ? "warning" : "success"}>{actionMessage}</Notice> : null}
       <RoleIntro
         title="Student manages learning without hunting through menus"
         description="The student workspace keeps the core CMIS promise understandable: see progress, join courses, ask for course help, and verify completed learning."
         steps={["Check progress", "Register course", "Verify proof"]}
       />
+      {actionMessage ? <Notice tone={actionMessage.includes("could not") || actionMessage.includes("No certificate") ? "warning" : "success"}>{actionMessage}</Notice> : null}
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="Study Confidence" value={`${Math.round(pathway.mastery_probability * 100)}%`} delta={pathway.predicted_outcome} tone="blue" />
         <MetricCard label="Current Grade" value={currentGrade} delta={`${completedScores.length} graded`} tone="green" />
@@ -1632,12 +1632,12 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
 
   return (
     <div className="space-y-5">
-      {actionMessage ? <Notice tone={actionMessage.includes("could not") || actionMessage.includes("unavailable") ? "warning" : "success"}>{actionMessage}</Notice> : null}
       <RoleIntro
         title="Teacher focuses on classes, submissions, and course quality"
         description="This keeps AI support explainable: the system drafts feedback, but the teacher reviews and saves the final grade."
         steps={["View classes", "Review work", "Improve syllabus"]}
       />
+      {actionMessage ? <Notice tone={actionMessage.includes("could not") || actionMessage.includes("unavailable") ? "warning" : "success"}>{actionMessage}</Notice> : null}
       <div className="grid gap-4 md:grid-cols-3">
         <MetricCard label="My Classes" value={String(activeCourses.length)} delta="Monsoon 2026" tone="blue" />
         <MetricCard label="Work To Review" value={String(gradingQueue.length)} delta="AI ready" tone="amber" />
