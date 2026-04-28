@@ -549,8 +549,8 @@ function LoginScreen({
   ];
 
   return (
-    <main className="min-h-screen lg:h-screen lg:overflow-hidden">
-      <header className="border-b border-line bg-secondary/92 shadow-neo-soft backdrop-blur">
+    <main className="flex min-h-screen flex-col lg:h-screen lg:overflow-hidden">
+      <header className="shrink-0 border-b border-line bg-secondary/92 shadow-neo-soft backdrop-blur">
         <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-secondary">
@@ -586,8 +586,8 @@ function LoginScreen({
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-97px)] xl:grid-cols-[300px_minmax(0,1fr)]">
-        <section className="neo-panel flex flex-col p-4">
+      <div className="mx-auto grid w-full max-w-[1380px] flex-1 gap-4 px-4 py-4 sm:px-6 lg:min-h-0 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <section className="neo-panel flex min-h-0 flex-col p-4">
           <div className="flex items-start gap-3">
             <span className="neo-icon h-10 w-10 shrink-0">
               <LayoutGrid className="h-5 w-5" aria-hidden="true" />
@@ -637,9 +637,9 @@ function LoginScreen({
                 ["Handoffs", "Student, faculty, ops, IT"],
                 ["Traceability", "Records and status history"],
               ].map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-secondary px-3 py-1.5 text-xs shadow-neo-soft">
-                  <span className="font-bold text-text">{label}</span>
-                  <span className="text-right text-muted">{value}</span>
+                <div key={label} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 overflow-hidden rounded-md bg-secondary px-3 py-2 text-xs shadow-neo-soft">
+                  <span className="truncate font-bold text-text">{label}</span>
+                  <span className="min-w-0 truncate text-right text-[11px] leading-5 text-muted">{value}</span>
                 </div>
               ))}
             </div>
@@ -663,7 +663,7 @@ function LoginScreen({
                   key={option.key}
                   type="button"
                   onClick={() => onSelectRole(option.key)}
-                  className="neo-panel group flex min-h-[210px] flex-col p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-neo"
+                  className="neo-panel group flex min-h-0 flex-col p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-neo md:min-h-[210px] xl:min-h-0"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="neo-icon h-10 w-10 transition group-hover:bg-primary group-hover:text-secondary">
