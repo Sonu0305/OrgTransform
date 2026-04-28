@@ -593,57 +593,86 @@ function LoginScreen({
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto flex min-h-screen max-w-[1280px] flex-col justify-center gap-6 px-4 py-8 sm:px-6">
-        <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-          <section className="rounded-lg border border-line bg-white p-6 shadow-panel">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-ink text-white">
-              <GraduationCap className="h-7 w-7" aria-hidden="true" />
+      <header className="border-b border-line bg-white/92 backdrop-blur">
+        <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink text-white">
+              <GraduationCap className="h-6 w-6" aria-hidden="true" />
             </div>
-            <p className="mt-5 text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Course Management Information System</p>
-            <h1 className="mt-2 text-3xl font-semibold text-ink sm:text-4xl">CMIS Course Management</h1>
-            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
-              A role-based campus system for course registration, teaching review, academic operations, privacy, and explainable organizational transformation.
-            </p>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {proofPoints.map((point) => {
-                const Icon = point.icon;
-                return (
-                  <div key={point.label} className="rounded-lg border border-line bg-slate-50 p-3">
-                    <Icon className="h-5 w-5 text-sky-600" aria-hidden="true" />
-                    <p className="mt-2 text-sm font-semibold text-ink">{point.value}</p>
-                    <p className="text-xs text-slate-500">{point.label}</p>
-                  </div>
-                );
-              })}
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-semibold text-ink sm:text-lg">CMIS Course Management</h1>
+              <p className="hidden text-xs text-slate-500 sm:block">Course Management Information System</p>
             </div>
+          </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <Badge
-                className={
-                  apiState === "live"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                    : apiState === "loading"
-                      ? "border-sky-200 bg-sky-50 text-sky-800"
-                      : "border-amber-200 bg-amber-50 text-amber-800"
-                }
-              >
-                System {apiState === "live" ? "online" : apiState === "offline" ? "offline demo mode" : "checking"}
-              </Badge>
-              <Badge className="border-slate-200 bg-slate-50 text-slate-700">Persistent campus records</Badge>
-              <button
-                type="button"
-                onClick={() => void onRefresh()}
-                className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                Refresh
-              </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              className={
+                apiState === "live"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : apiState === "loading"
+                    ? "border-sky-200 bg-sky-50 text-sky-800"
+                    : "border-amber-200 bg-amber-50 text-amber-800"
+              }
+            >
+              System {apiState === "live" ? "online" : apiState === "offline" ? "offline demo" : "checking"}
+            </Badge>
+            <button
+              type="button"
+              onClick={() => void onRefresh()}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-white text-slate-600 hover:bg-slate-50"
+              aria-label="Refresh campus data"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="mx-auto grid max-w-[1380px] gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <section className="rounded-lg border border-line bg-white p-5 shadow-panel xl:sticky xl:top-5 xl:h-fit">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Select workspace</p>
+          <h2 className="mt-2 text-2xl font-semibold text-ink">Campus Course Hub</h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Role-based access for registration, teaching review, academic operations, privacy, and campus workflow tracking.
+          </p>
+
+          <div className="mt-5 divide-y divide-line rounded-lg border border-line bg-slate-50">
+            {proofPoints.map((point) => {
+              const Icon = point.icon;
+              return (
+                <div key={point.label} className="flex items-center gap-3 px-3 py-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-sky-600 shadow-sm">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-ink">{point.value}</span>
+                    <span className="block text-xs text-slate-500">{point.label}</span>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <Badge className="border-slate-200 bg-slate-50 text-slate-700">Persistent records</Badge>
+            <Badge className={overview.system.groq_configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}>
+              AI {overview.system.groq_configured ? "ready" : "local"}
+            </Badge>
+          </div>
+          {error ? <p className="mt-3 text-xs leading-5 text-amber-700">Using local demo data: {error.slice(0, 120)}</p> : null}
+        </section>
+
+        <section className="min-w-0">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Available logins</p>
+              <h2 className="text-2xl font-semibold text-ink">Choose your role</h2>
             </div>
-            {error ? <p className="mt-3 text-sm text-amber-700">Using local demo data: {error.slice(0, 120)}</p> : null}
-          </section>
+            <p className="text-sm text-slate-500">Demo users are preloaded for each workspace.</p>
+          </div>
 
-          <section className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {roleOptions.map((option) => {
               const Icon = option.icon;
               const person = overview.users[option.key];
@@ -655,23 +684,23 @@ function LoginScreen({
                   className="group rounded-lg border border-line bg-white p-5 text-left shadow-panel transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-slate-700 group-hover:bg-ink group-hover:text-white">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition group-hover:bg-ink group-hover:text-white">
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
                     <Badge className="border-slate-200 bg-slate-50 text-slate-700">{person.avatar}</Badge>
                   </div>
                   <p className="mt-4 text-lg font-semibold text-ink">{option.loginTitle}</p>
                   <p className="mt-1 text-sm font-medium text-slate-500">{person.name} · {person.department}</p>
-                  <p className="mt-3 min-h-[48px] text-sm leading-6 text-slate-600">{option.description}</p>
-                  <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-ink">
+                  <p className="mt-3 min-h-[48px] text-sm leading-6 text-slate-600 md:min-h-[72px] xl:min-h-[48px]">{option.description}</p>
+                  <div className="mt-4 flex items-center gap-2 border-t border-line pt-4 text-sm font-semibold text-ink">
                     Enter workspace
                     <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
                   </div>
                 </button>
               );
             })}
-          </section>
-        </div>
+          </div>
+        </section>
       </div>
     </main>
   );
