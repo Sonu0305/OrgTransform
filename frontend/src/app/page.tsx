@@ -526,7 +526,7 @@ function LoginScreen({
       </header>
 
       <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-61px)] xl:grid-cols-[300px_minmax(0,1fr)]">
-        <section className="rounded-lg border border-line bg-white p-4 shadow-panel xl:h-fit">
+        <section className="rounded-lg border border-line bg-white p-4 shadow-panel">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 ring-1 ring-sky-100">
               <LayoutGrid className="h-5 w-5" aria-hidden="true" />
