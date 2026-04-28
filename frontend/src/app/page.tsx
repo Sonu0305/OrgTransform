@@ -577,7 +577,7 @@ function LoginScreen({
             <button
               type="button"
               onClick={() => void onRefresh()}
-              className="neo-button h-9 w-9 p-0"
+              className="neo-button neo-icon-button"
               aria-label="Refresh campus data"
             >
               <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -910,7 +910,7 @@ function AppShell({
               AI {overview.system.groq_configured ? "ready" : "local"}
             </Badge>
             <button
-              className="neo-button h-9 w-9 p-0"
+              className="neo-button neo-icon-button"
               onClick={() => void refreshData()}
               aria-label="Refresh campus data"
             >

@@ -160,6 +160,17 @@ textarea:focus-visible {
     box-shadow: var(--shadow-inset);
   }
 
+  .neo-icon-button {
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    min-inline-size: 2.5rem;
+    min-block-size: 2.5rem;
+    max-inline-size: 2.5rem;
+    max-block-size: 2.5rem;
+    flex: 0 0 2.5rem;
+    padding: 0;
+  }
+
   .neo-button-primary {
     border-color: var(--color-primary);
     background: var(--color-primary);
