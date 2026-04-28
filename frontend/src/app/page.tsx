@@ -1395,7 +1395,6 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                 )}
               >
                 {message.role === "user" ? <p>{message.content}</p> : <FormattedAiText content={message.content} />}
-                {message.role !== "user" ? <p className="mt-1 text-[11px] opacity-70">AI response</p> : null}
               </div>
             ))}
           </div>
