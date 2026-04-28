@@ -1371,7 +1371,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
         <MetricCard label="Certificates" value={String(overview.certificates.length)} delta={`${overview.gamification.badges.length} badges`} tone="blue" />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_0.95fr]">
+      <div className="grid gap-5">
         <Panel id="learning-path" title="Personal Study Plan" eyebrow="Simple next steps for the student" icon={BrainCircuit}>
           <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
             <div className="space-y-4">
