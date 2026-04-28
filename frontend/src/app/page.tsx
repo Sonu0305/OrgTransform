@@ -655,7 +655,7 @@ function LoginScreen({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <Badge className="border-slate-200 bg-slate-50 text-slate-700">Persistent records</Badge>
+            <Badge className="border-emerald-200 bg-emerald-50 text-emerald-800">Persistent records</Badge>
             <Badge className={overview.system.groq_configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}>
               AI {overview.system.groq_configured ? "ready" : "local"}
             </Badge>
@@ -1311,7 +1311,9 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                 </option>
               ))}
             </select>
-            <Badge className="border-slate-200 bg-slate-50 text-slate-700">{overview.system.groq_configured ? "AI ready" : "Local guide"}</Badge>
+            <Badge className={overview.system.groq_configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}>
+              {overview.system.groq_configured ? "AI ready" : "Local guide"}
+            </Badge>
           </div>
           <div className="thin-scrollbar h-72 space-y-3 overflow-y-auto rounded-lg border border-line bg-slate-50 p-3">
             {chat.map((message, index) => (
