@@ -565,26 +565,23 @@ function LoginScreen({
           </div>
           {error ? <p className="mt-3 text-xs leading-5 text-amber-700">Using local demo data: {error.slice(0, 120)}</p> : null}
 
-          <div className="mt-auto pt-4">
-            <div className="rounded-lg border border-line bg-slate-50 p-3">
+          <div className="mt-4 rounded-lg border border-line bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Workspace focus</p>
-              <div className="mt-3 space-y-3">
-                {[
-                  ["Course lifecycle", "Catalog, seats, approvals, and certificates."],
-                  ["Role handoffs", "Students, teachers, registrar, and IT stay aligned."],
-                  ["Audit trail", "Records and workflow status remain traceable."],
-                ].map(([title, description]) => (
-                  <div key={title} className="flex gap-2.5">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-ink">{title}</p>
-                      <p className="text-xs leading-5 text-slate-500">{description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
             </div>
-            <p className="mt-3 text-xs leading-5 text-slate-500">Choose a role to enter the matching campus dashboard.</p>
+            <div className="mt-3 grid gap-2">
+              {[
+                ["Lifecycle", "Catalog to certificates"],
+                ["Handoffs", "Student, faculty, ops, IT"],
+                ["Traceability", "Records and status history"],
+              ].map(([label, value]) => (
+                <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-xs shadow-sm">
+                  <span className="font-semibold text-ink">{label}</span>
+                  <span className="text-right text-slate-500">{value}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
