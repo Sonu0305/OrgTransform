@@ -112,8 +112,8 @@ const navByRole: Record<RoleKey, { label: string; icon: typeof Activity; id: str
     { label: "My Progress", icon: BrainCircuit, id: "learning-path" },
     { label: "Course Registration", icon: BookOpen, id: "my-courses" },
     { label: "Course Help", icon: Bot, id: "ai-tutor" },
-    { label: "Certificates", icon: BadgeCheck, id: "credentials" },
     { label: "Learning Rewards", icon: WalletCards, id: "learning-rewards" },
+    { label: "Certificates", icon: BadgeCheck, id: "credentials" },
   ],
   faculty: [
     { label: "My Classes", icon: BookOpen, id: "course-studio" },
@@ -1568,6 +1568,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
       </div>
 
       <div className="grid gap-5">
+        <GamificationPanel overview={overview} />
         <Panel id="credentials" title="Certificates" eyebrow="Proof of completed learning" icon={WalletCards}>
           <div className="space-y-3">
             {overview.certificates.map((certificate) => (
@@ -1614,7 +1615,6 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
           </div>
           {verifyResult ? <p className="mt-3 text-sm font-bold text-text/85">{verifyResult}</p> : null}
         </Panel>
-        <GamificationPanel overview={overview} />
       </div>
     </div>
   );
