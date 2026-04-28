@@ -375,11 +375,15 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
     }
 
 
-@app.get(f"{settings.api_prefix}/certificates/verify/{{certificate_hash}}")
+@app.post(f"{settings.api_prefix}/certificates/verify/{{certificate_hash}}")
 def verify_certificate(certificate_hash: str) -> dict[str, Any]:
     certificate = next((item for item in db.CERTIFICATES if item["hash"].lower() == certificate_hash.lower()), None)
     if not certificate:
         return {"verified": False, "status": "Not found", "hash": certificate_hash}
+    if certificate["status"] != "Verified":
+        certificate["status"] = "Verified"
+        certificate["verified_at"] = now_iso()
+        add_audit("Aarav Sharma", "Student", f"Verified certificate for {certificate['course']}")
     return {"verified": True, "status": certificate["status"], "certificate": certificate}
 
 

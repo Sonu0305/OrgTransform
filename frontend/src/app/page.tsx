@@ -1255,6 +1255,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
       const result = await verifyCertificate(hash);
       setVerifyResult(result.verified ? `${result.status}: ${result.certificate?.course}` : "Certificate hash not found");
       setActionMessage(result.verified ? "Certificate verified successfully." : "No certificate was found for that ID.");
+      if (result.verified) await onRefresh();
     } catch (err) {
       setVerifyResult(err instanceof Error ? err.message : "Verification failed");
       setActionMessage("Verification could not be completed.");

@@ -244,5 +244,6 @@ export function saveWorkflowAction(workflow: string, action: string) {
 export function verifyCertificate(hash: string) {
   return request<{ verified: boolean; status: string; certificate?: Certificate; hash?: string }>(
     `/api/v1/certificates/verify/${encodeURIComponent(hash)}`,
+    { method: "POST" },
   );
 }

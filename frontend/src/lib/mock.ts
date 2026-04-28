@@ -197,7 +197,7 @@ export const localOverview: Overview = {
     "POST /api/v1/chat/{course_id}/message",
     "POST /api/v1/grading/suggest",
     "PATCH /api/v1/submissions/{submission_id}/grade",
-    "GET /api/v1/certificates/verify/{hash}",
+    "POST /api/v1/certificates/verify/{hash}",
     "GET /api/v1/faculty/{faculty_id}/classes",
     "GET /api/v1/faculty/{faculty_id}/grading-queue",
     "GET /api/v1/faculty/course-improvements",
