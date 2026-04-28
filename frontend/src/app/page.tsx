@@ -836,7 +836,7 @@ function AppShell({
         onRefresh={refreshData}
         onSelectRole={(nextRole) => {
           setRole(nextRole);
-          scrollToSection(navByRole[nextRole][0].id);
+          window.scrollTo({ top: 0, left: 0 });
         }}
       />
     );
