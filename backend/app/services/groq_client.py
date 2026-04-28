@@ -42,11 +42,8 @@ class GroqClient:
                 response.raise_for_status()
                 data = response.json()
         except Exception as exc:  # Keep local workflows usable even if the API quota/network fails.
-            reason = "the live AI service was unavailable"
-            if isinstance(exc, httpx.HTTPStatusError):
-                reason = f"the live AI service returned HTTP {exc.response.status_code}"
             return {
-                "content": f"{fallback}\n\nLive AI was unavailable, so the system prepared this local guidance from saved CMIS data ({reason}).",
+                "content": f"{fallback}\n\nLive AI was unavailable, so the system prepared this local guidance from saved CMIS data.",
                 "provider": "local",
                 "model": self.settings.groq_model,
                 "mocked": True,

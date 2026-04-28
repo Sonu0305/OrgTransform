@@ -94,61 +94,104 @@ def compact_course(course: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def ai_context_payload(student_id: str = "stu-aarav", course_id: str | None = None) -> str:
-    student_user = next((user for user in db.USERS.values() if user["id"] == student_id), db.USERS["student"])
-    student_enrollments = [item for item in db.ENROLLMENTS if item["student_id"] == student_id]
-    student_course_ids = {item["course_id"] for item in student_enrollments}
-    focused_course_ids = set(student_course_ids)
-    if course_id:
-        focused_course_ids.add(course_id)
+def course_label(course_id: str) -> str:
+    course = next((item for item in db.COURSES if item["id"] == course_id), None)
+    return f"{course['code']} {course['title']}" if course else course_id
 
-    courses = [compact_course(course) for course in db.COURSES if course["id"] in focused_course_ids]
-    all_course_catalog = [
+
+def compact_enrollment(enrollment: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "course": course_label(enrollment["course_id"]),
+        "status": enrollment["status"],
+        "progress": enrollment["progress"],
+        "deadline_risk": enrollment["deadline_risk"],
+    }
+
+
+def compact_grade(item: dict[str, Any]) -> dict[str, Any]:
+    percentage = None if item["score"] is None else round((item["score"] / item["max_score"]) * 100, 1)
+    return {
+        "course": item["course"],
+        "assessment": item["assessment"],
+        "score": item["score"],
+        "max_score": item["max_score"],
+        "percentage": percentage,
+        "status": "pending" if item["score"] is None else "graded",
+        "trend": item["trend"],
+    }
+
+
+def relevant_course_catalog(question: str) -> list[dict[str, Any]]:
+    lower = question.lower()
+    if not any(word in lower for word in ["course", "enroll", "register", "seat", "catalog", "available", "join"]):
+        return []
+    return [
         {
-            "id": course["id"],
             "code": course["code"],
             "title": course["title"],
             "department": course["department"],
             "skills": course["skills"],
             "seats_open": max(course["capacity"] - course["enrolled"], 0),
+            "waitlist": course["waitlist"],
         }
         for course in db.COURSES
     ]
 
-    submissions = [
-        {
-            "assessment_id": item["assessment_id"],
-            "course_id": item["course_id"],
-            "status": item["status"],
-            "score": item["score"],
-            "feedback": item["feedback"],
-            "submitted_at": item["submitted_at"],
-        }
-        for item in db.SUBMISSIONS
-        if item["student_id"] == student_id or item["course_id"] in focused_course_ids
-    ]
 
+def student_ai_context_payload(student_id: str, course_id: str, question: str) -> str:
+    student_user = next((user for user in db.USERS.values() if user["id"] == student_id), db.USERS["student"])
+    student_enrollments = [item for item in db.ENROLLMENTS if item["student_id"] == student_id]
+    student_course_ids = {item["course_id"] for item in student_enrollments}
     payload = {
-        "student": student_user,
-        "all_users": db.USERS,
-        "current_course_id": course_id,
-        "student_enrollments": student_enrollments,
-        "student_courses": courses,
-        "course_catalog": all_course_catalog,
-        "assessments": [item for item in db.ASSESSMENTS if item["course_id"] in focused_course_ids],
-        "submissions": submissions,
-        "gradebook": db.GRADEBOOK,
+        "student": {
+            "id": student_user["id"],
+            "name": student_user["name"],
+            "role": student_user["role"],
+            "department": student_user["department"],
+            "skills": student_user["skills"],
+        },
+        "current_course": compact_course(find_course(course_id)),
+        "enrollments": [compact_enrollment(item) for item in student_enrollments],
+        "enrolled_courses": [compact_course(course) for course in db.COURSES if course["id"] in student_course_ids],
+        "gradebook": [compact_grade(item) for item in db.GRADEBOOK],
         "learning_pathway": db.PATHWAYS.get(student_id),
-        "certificates": [item for item in db.CERTIFICATES if item["student_id"] == student_id],
-        "campus_kpis": db.KPI_CARDS,
-        "department_usage": db.HEATMAP,
-        "workflow_delays": db.PROCESS_DEBT,
-        "approval_route": db.DECISION_MAP,
-        "course_improvement_gaps": db.ALUMNI_SKILL_GAPS,
-        "change_management": db.CHANGE_MANAGEMENT,
-        "api_surface": db.API_ENDPOINTS,
-        "system": system_payload(),
-        "recent_audit_log": db.AUDIT_LOG[:12],
+        "certificates": [
+            {
+                "course": item["course"],
+                "grade": item["grade"],
+                "issued_at": item["issued_at"],
+                "status": item["status"],
+                "badges": item["badges"],
+            }
+            for item in db.CERTIFICATES
+            if item["student_id"] == student_id
+        ],
+        "course_catalog_if_relevant": relevant_course_catalog(question),
+    }
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
+
+
+def grading_ai_context_payload(submission: dict[str, Any], assessment: dict[str, Any]) -> str:
+    course = find_course(submission["course_id"])
+    payload = {
+        "course": compact_course(course),
+        "assessment": assessment,
+        "submission": {
+            "student_id": submission["student_id"],
+            "student_name": submission["student_name"],
+            "status": submission["status"],
+            "submitted_at": submission["submitted_at"],
+            "similarity_score": submission["similarity_score"],
+            "score": submission["score"],
+            "feedback": submission["feedback"],
+            "text": submission["text"],
+        },
+        "course_gradebook": [compact_grade(item) for item in db.GRADEBOOK if item["course"] == course["title"]],
+        "course_improvement_gaps": [
+            item
+            for item in db.ALUMNI_SKILL_GAPS
+            if course["code"] in item["affected_courses"] or course["title"] in item["affected_courses"]
+        ],
     }
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
 
@@ -407,8 +450,8 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
         {
             "role": "system",
             "content": (
-                "You are the CMIS AI tutor and campus assistant. You can use the compact CMIS JSON context supplied by the app, "
-                "including users, courses, enrollments, submissions, gradebook, analytics, certificates, audit records, API surface, and system status. "
+                "You are the CMIS AI tutor and campus assistant. Use only the student-scoped CMIS JSON context supplied by the app. "
+                "It contains the current user, their courses, enrollments, gradebook, learning pathway, certificates, and relevant catalog data when needed. "
                 "Answer questions from that data whenever possible. Do not invent facts; if the data does not contain an answer, say what is missing and suggest where to check. "
                 "Never expose environment variables, API keys, or secrets. "
                 "Format every answer as clean markdown: one short ATX heading using ###, 3-5 bullets, and bold labels where helpful. "
@@ -418,7 +461,7 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
         {
             "role": "user",
             "content": (
-                f"CMIS app context JSON:\n{ai_context_payload(payload.student_id, course_id)}\n\n"
+                f"Student-scoped CMIS context JSON:\n{student_ai_context_payload(payload.student_id, course_id, payload.message)}\n\n"
                 f"Course: {course['code']} - {course['title']}\n"
                 f"Description: {course['description']}\n"
                 f"Skills: {', '.join(course['skills'])}\n"
@@ -456,8 +499,8 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
         {
             "role": "system",
             "content": (
-                "You are CMIS AI-assisted grading. You can use the compact CMIS JSON context supplied by the app, "
-                "including the user, course, gradebook, submissions, certificates, analytics, audit records, API surface, and system status. "
+                "You are CMIS AI-assisted grading. Use only the grading-scoped CMIS JSON context supplied by the app. "
+                "It contains the relevant course, assessment, submission, gradebook slice, and course improvement gaps. "
                 "Return a fair rubric-aware suggestion with short feedback. Do not invent facts; use the supplied data and say when evidence is missing. "
                 "Never expose environment variables, API keys, or secrets. "
                 "Format as markdown with: **Suggested score:**, a Strengths heading, a Feedback heading, and concise bullets. "
@@ -467,7 +510,7 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
         {
             "role": "user",
             "content": (
-                f"CMIS app context JSON:\n{ai_context_payload(submission['student_id'], submission['course_id'])}\n\n"
+                f"Grading-scoped CMIS context JSON:\n{grading_ai_context_payload(submission, assessment)}\n\n"
                 f"Assessment: {assessment['title']}\nRubric: {assessment['rubric']}\n"
                 f"Max score: {assessment['max_score']}\nSimilarity score: {submission['similarity_score']}\n"
                 f"Student work: {submission['text']}"
