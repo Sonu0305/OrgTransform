@@ -526,7 +526,7 @@ function LoginScreen({
       </header>
 
       <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-61px)] xl:grid-cols-[300px_minmax(0,1fr)]">
-        <section className="rounded-lg border border-line bg-white p-4 shadow-panel">
+        <section className="flex flex-col rounded-lg border border-line bg-white p-4 shadow-panel">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 ring-1 ring-sky-100">
               <LayoutGrid className="h-5 w-5" aria-hidden="true" />
@@ -564,6 +564,28 @@ function LoginScreen({
             </Badge>
           </div>
           {error ? <p className="mt-3 text-xs leading-5 text-amber-700">Using local demo data: {error.slice(0, 120)}</p> : null}
+
+          <div className="mt-auto pt-4">
+            <div className="rounded-lg border border-line bg-slate-50 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Workspace focus</p>
+              <div className="mt-3 space-y-3">
+                {[
+                  ["Course lifecycle", "Catalog, seats, approvals, and certificates."],
+                  ["Role handoffs", "Students, teachers, registrar, and IT stay aligned."],
+                  ["Audit trail", "Records and workflow status remain traceable."],
+                ].map(([title, description]) => (
+                  <div key={title} className="flex gap-2.5">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink">{title}</p>
+                      <p className="text-xs leading-5 text-slate-500">{description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="mt-3 text-xs leading-5 text-slate-500">Choose a role to enter the matching campus dashboard.</p>
+          </div>
         </section>
 
         <section className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
