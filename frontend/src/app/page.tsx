@@ -525,7 +525,7 @@ function LoginScreen({
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-61px)] xl:grid-cols-[300px_minmax(0,1fr)]">
+      <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-97px)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <section className="flex flex-col rounded-lg border border-line bg-white p-4 shadow-panel">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 ring-1 ring-sky-100">
@@ -540,17 +540,17 @@ function LoginScreen({
             Role-based access for registration, teaching review, academic operations, privacy, and campus workflow tracking.
           </p>
 
-          <div className="mt-4 grid gap-2">
+          <div className="mt-4 grid grid-cols-3 gap-2">
             {proofPoints.map((point) => {
               const Icon = point.icon;
               return (
-                <div key={point.label} className="flex items-center gap-3 rounded-lg border border-line bg-slate-50 px-3 py-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-sky-600 shadow-sm">
+                <div key={point.label} className="rounded-lg border border-line bg-slate-50 px-2 py-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-sky-600 shadow-sm">
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-ink">{point.value}</span>
-                    <span className="block text-xs text-slate-500">{point.label}</span>
+                  <span className="mt-2 block min-w-0">
+                    <span className="block truncate text-sm font-semibold text-ink">{point.value}</span>
+                    <span className="block truncate text-[11px] text-slate-500">{point.label}</span>
                   </span>
                 </div>
               );
@@ -576,7 +576,7 @@ function LoginScreen({
                 ["Handoffs", "Student, faculty, ops, IT"],
                 ["Traceability", "Records and status history"],
               ].map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-xs shadow-sm">
+                <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-1.5 text-xs shadow-sm">
                   <span className="font-semibold text-ink">{label}</span>
                   <span className="text-right text-slate-500">{value}</span>
                 </div>
