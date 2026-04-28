@@ -891,7 +891,7 @@ function AppShell({
       </header>
 
       <div className="mx-auto grid max-w-[1380px] items-start gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[250px_minmax(0,1fr)]">
-        <aside className="thin-scrollbar flex rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[96px] xl:h-[calc(100vh-116px)] xl:max-h-[calc(100vh-116px)] xl:flex-col xl:overflow-x-hidden xl:overflow-y-auto">
+        <aside className="flex rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[96px] xl:min-h-[calc(100vh-116px)] xl:flex-col">
           <div className="flex items-center gap-3 border-b border-line pb-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 via-emerald-500 to-amber-400 text-sm font-bold text-white shadow-sm">
               {user.avatar}
@@ -925,7 +925,7 @@ function AppShell({
             })}
           </nav>
 
-          <div className="mt-5 flex min-h-[220px] flex-1 flex-col rounded-lg border border-line bg-slate-50 p-3">
+          <div className="mt-5 flex min-h-fit flex-1 flex-col rounded-lg border border-line bg-slate-50 p-3">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Workspace pulse</p>
               <Activity className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
