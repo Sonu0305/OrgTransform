@@ -190,6 +190,7 @@ export type Overview = {
   kpis: { label: string; value: string; delta: string; tone: string }[];
   free_tier_stack: { service: string; provider: string; status: string; limit: string }[];
   capacity_monitor: { month: string; storage: number; requests: number; latency: number; errors: number }[];
+  privacy_controls: { title: string; detail: string }[];
   api_endpoints: string[];
   system: {
     groq_configured: boolean;
@@ -227,38 +228,38 @@ export function getOverview() {
   return request<Overview>("/api/v1/overview", { cache: "no-store" });
 }
 
-export function enroll(courseId: string) {
+export function enroll(courseId: string, studentId: string) {
   return request("/api/v1/enrollments", {
     method: "POST",
-    body: JSON.stringify({ student_id: "stu-aarav", course_id: courseId }),
+    body: JSON.stringify({ student_id: studentId, course_id: courseId }),
   });
 }
 
-export function sendTutorMessage(courseId: string, message: string) {
+export function sendTutorMessage(courseId: string, studentId: string, message: string) {
   return request<{ message: ChatMessage; history: ChatMessage[] }>(`/api/v1/chat/${courseId}/message`, {
     method: "POST",
-    body: JSON.stringify({ student_id: "stu-aarav", message }),
+    body: JSON.stringify({ student_id: studentId, message }),
   });
 }
 
-export function suggestGrade(submissionId: string) {
+export function suggestGrade(submissionId: string, facultyId: string) {
   return request<{ suggestion: string; provider: string; model: string; mocked: boolean }>("/api/v1/grading/suggest", {
     method: "POST",
-    body: JSON.stringify({ submission_id: submissionId }),
+    body: JSON.stringify({ submission_id: submissionId, faculty_id: facultyId }),
   });
 }
 
-export function applyGrade(submissionId: string, score: number, feedback: string) {
+export function applyGrade(submissionId: string, score: number, feedback: string, facultyId: string) {
   return request<Submission>(`/api/v1/submissions/${submissionId}/grade`, {
     method: "PATCH",
-    body: JSON.stringify({ score, feedback, faculty_id: "fac-meena" }),
+    body: JSON.stringify({ score, feedback, faculty_id: facultyId }),
   });
 }
 
-export function saveWorkflowAction(workflow: string, action: string) {
+export function saveWorkflowAction(workflow: string, action: string, actor: string, role: string) {
   return request<{ status: string; workflow: ProcessDebt }>("/api/v1/admin/workflow-actions", {
     method: "POST",
-    body: JSON.stringify({ workflow, action }),
+    body: JSON.stringify({ workflow, action, actor, role }),
   });
 }
 

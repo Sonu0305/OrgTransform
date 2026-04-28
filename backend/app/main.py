@@ -50,6 +50,13 @@ def find_submission(submission_id: str) -> dict[str, Any]:
     return submission
 
 
+def find_user_by_id(user_id: str) -> dict[str, Any]:
+    user = next((item for item in db.USERS.values() if item["id"] == user_id), None)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 def add_audit(actor: str, role: str, action: str, risk: str = "Low") -> None:
     db.AUDIT_LOG.insert(
         0,
@@ -73,7 +80,16 @@ def system_payload() -> dict[str, Any]:
 
 
 def visible_api_surface() -> list[str]:
-    return db.API_ENDPOINTS
+    endpoints: list[str] = []
+    for route in app.routes:
+        if not getattr(route, "include_in_schema", False):
+            continue
+        path = getattr(route, "path_format", getattr(route, "path", ""))
+        if path != "/health" and not path.startswith(settings.api_prefix):
+            continue
+        methods = sorted(method for method in getattr(route, "methods", set()) if method not in {"HEAD", "OPTIONS"})
+        endpoints.extend(f"{method} {path}" for method in methods)
+    return sorted(endpoints)
 
 
 def compact_course(course: dict[str, Any]) -> dict[str, Any]:
@@ -242,6 +258,7 @@ def health() -> dict[str, Any]:
 @app.get(f"{settings.api_prefix}/overview")
 def overview() -> dict[str, Any]:
     payload = db.snapshot()
+    payload["api_endpoints"] = visible_api_surface()
     payload["system"] = system_payload()
     return payload
 
@@ -331,6 +348,7 @@ def list_courses(
 @app.post(f"{settings.api_prefix}/enrollments")
 def enroll(payload: EnrollmentRequest) -> dict[str, Any]:
     course = find_course(payload.course_id)
+    student = find_user_by_id(payload.student_id)
     existing = next(
         (
             enrollment
@@ -356,17 +374,42 @@ def enroll(payload: EnrollmentRequest) -> dict[str, Any]:
         course["enrolled"] += 1
     else:
         course["waitlist"] += 1
-    add_audit("Aarav Sharma", "Student", f"Enrollment {status.lower()} for {course['code']}")
+    add_audit(student["name"], student["role"], f"Enrollment {status.lower()} for {course['code']}")
     return {"status": status.lower(), "enrollment": enrollment, "course": course}
 
 
 @app.patch(f"{settings.api_prefix}/submissions/{{submission_id}}/grade")
 def grade_submission(submission_id: str, payload: GradePatch) -> dict[str, Any]:
     submission = find_submission(submission_id)
+    faculty = find_user_by_id(payload.faculty_id)
+    assessment = next((item for item in db.ASSESSMENTS if item["id"] == submission["assessment_id"]), None)
+    course = find_course(submission["course_id"])
     submission["score"] = payload.score
     submission["feedback"] = payload.feedback
     submission["status"] = "Graded"
-    add_audit("Dr. Meena Iyer", "Faculty", f"Finalized grade for {submission['student_name']}")
+    if assessment:
+        grade = next(
+            (
+                item
+                for item in db.GRADEBOOK
+                if item["course"] == course["title"] and item["assessment"] == assessment["title"]
+            ),
+            None,
+        )
+        if grade:
+            grade["score"] = payload.score
+        else:
+            db.GRADEBOOK.append(
+                {
+                    "course": course["title"],
+                    "assessment": assessment["title"],
+                    "score": payload.score,
+                    "max_score": assessment["max_score"],
+                    "weight": assessment["weight"],
+                    "trend": "graded",
+                }
+            )
+    add_audit(faculty["name"], faculty["role"], f"Finalized grade for {submission['student_name']}")
     return submission
 
 
@@ -442,6 +485,7 @@ def faculty_course_improvements() -> list[dict[str, Any]]:
 @app.post(f"{settings.api_prefix}/chat/{{course_id}}/message")
 async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
     course = find_course(course_id)
+    student = find_user_by_id(payload.student_id)
     history = db.CHAT_HISTORY.setdefault(course_id, [])
     history.append({"role": "user", "content": payload.message, "provider": "student"})
 
@@ -478,13 +522,14 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
         "mocked": completion["mocked"],
     }
     history.append(assistant_message)
-    add_audit("Aarav Sharma", "Student", f"Asked AI tutor in {course['code']}")
+    add_audit(student["name"], student["role"], f"Asked AI tutor in {course['code']}")
     return {"message": assistant_message, "history": history[-8:]}
 
 
 @app.post(f"{settings.api_prefix}/grading/suggest")
 async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
     submission = find_submission(payload.submission_id)
+    faculty = find_user_by_id(payload.faculty_id)
     assessment = next(item for item in db.ASSESSMENTS if item["id"] == submission["assessment_id"])
     fallback = (
         f"**Suggested score:** 86/{assessment['max_score']}\n\n"
@@ -518,7 +563,7 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
         },
     ]
     completion = await groq_client.complete(messages, fallback=fallback, temperature=0.1)
-    add_audit("Dr. Meena Iyer", "Faculty", f"Requested AI grading suggestion for {submission['student_name']}")
+    add_audit(faculty["name"], faculty["role"], f"Requested AI grading suggestion for {submission['student_name']}")
     return {
         "submission_id": submission["id"],
         "assessment_id": assessment["id"],
@@ -537,7 +582,8 @@ def verify_certificate(certificate_hash: str) -> dict[str, Any]:
     if certificate["status"] != "Verified":
         certificate["status"] = "Verified"
         certificate["verified_at"] = now_iso()
-        add_audit("Aarav Sharma", "Student", f"Verified certificate for {certificate['course']}")
+        student = find_user_by_id(certificate["student_id"])
+        add_audit(student["name"], student["role"], f"Verified certificate for {certificate['course']}")
     return {"verified": True, "status": certificate["status"], "certificate": certificate}
 
 
@@ -568,12 +614,7 @@ def it_api_surface() -> list[str]:
 
 @app.get(f"{settings.api_prefix}/it/privacy-controls")
 def it_privacy_controls() -> list[dict[str, str]]:
-    return [
-        {"title": "RBAC", "detail": "Four role workspaces are scoped through explicit role endpoints."},
-        {"title": "Audit log", "detail": "Important write actions persist actor, role, action, risk, and timestamp."},
-        {"title": "Credential trust", "detail": "Certificates verify by SHA-256 compatible hashes."},
-        {"title": "Data portability", "detail": "Campus records are exported through JSON-backed feature endpoints."},
-    ]
+    return db.PRIVACY_CONTROLS
 
 
 @app.get(f"{settings.api_prefix}/it/audit-trail")

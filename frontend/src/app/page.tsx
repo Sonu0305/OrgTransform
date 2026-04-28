@@ -63,7 +63,6 @@ import {
   suggestGrade,
   verifyCertificate,
 } from "@/lib/api";
-import { localOverview } from "@/lib/mock";
 
 const roleOptions = [
   {
@@ -514,7 +513,7 @@ function LoginScreen({
                     : "border-amber-200 bg-amber-50 text-amber-800"
               }
             >
-              System {apiState === "live" ? "online" : apiState === "offline" ? "offline demo" : "checking"}
+              System {apiState === "live" ? "online" : apiState === "offline" ? "offline" : "checking"}
             </Badge>
             <button
               type="button"
@@ -566,7 +565,7 @@ function LoginScreen({
               AI {overview.system.groq_configured ? "ready" : "local"}
             </Badge>
           </div>
-          {error ? <p className="mt-3 text-xs leading-5 text-amber-700">Using local demo data: {error.slice(0, 120)}</p> : null}
+          {error ? <p className="mt-3 text-xs leading-5 text-amber-700">Live data unavailable: {error.slice(0, 120)}</p> : null}
 
           <div className="mt-4 rounded-lg border border-line bg-slate-50 p-3">
             <div className="flex items-center justify-between gap-3">
@@ -630,8 +629,43 @@ function LoginScreen({
   );
 }
 
+function StartupScreen({
+  apiState,
+  error,
+  onRefresh,
+}: {
+  apiState: "loading" | "live" | "offline";
+  error: string;
+  onRefresh: () => Promise<void>;
+}) {
+  return (
+    <main className="flex min-h-screen items-center justify-center px-4">
+      <section className="w-full max-w-md rounded-lg border border-line bg-white p-5 shadow-panel">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink text-white">
+            <GraduationCap className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h1 className="text-lg font-semibold text-ink">CMIS Course Management</h1>
+            <p className="text-sm text-slate-500">{apiState === "loading" ? "Loading persisted campus records" : "Backend data is unavailable"}</p>
+          </div>
+        </div>
+        {error ? <Notice tone="warning">Connect the API service and refresh: {error.slice(0, 140)}</Notice> : null}
+        <button
+          type="button"
+          onClick={() => void onRefresh()}
+          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white"
+        >
+          <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          Refresh data
+        </button>
+      </section>
+    </main>
+  );
+}
+
 export default function Home() {
-  const [overview, setOverview] = useState<Overview>(localOverview);
+  const [overview, setOverview] = useState<Overview | null>(null);
   const [role, setRole] = useState<RoleKey | null>(null);
   const [apiState, setApiState] = useState<"loading" | "live" | "offline">("loading");
   const [error, setError] = useState("");
@@ -643,7 +677,6 @@ export default function Home() {
       setApiState("live");
       setError("");
     } catch (err) {
-      setOverview(localOverview);
       setApiState("offline");
       setError(err instanceof Error ? err.message : "API unavailable");
     }
@@ -653,6 +686,37 @@ export default function Home() {
     void refreshData();
   }, []);
 
+  if (!overview) {
+    return <StartupScreen apiState={apiState} error={error} onRefresh={refreshData} />;
+  }
+
+  return (
+    <AppShell
+      apiState={apiState}
+      error={error}
+      overview={overview}
+      refreshData={refreshData}
+      role={role}
+      setRole={setRole}
+    />
+  );
+}
+
+function AppShell({
+  apiState,
+  error,
+  overview,
+  refreshData,
+  role,
+  setRole,
+}: {
+  apiState: "loading" | "live" | "offline";
+  error: string;
+  overview: Overview;
+  refreshData: () => Promise<void>;
+  role: RoleKey | null;
+  setRole: (role: RoleKey | null) => void;
+}) {
   const activeRole = role ?? "student";
   const user = overview.users[activeRole];
   const searchItems = useMemo<SearchItem[]>(() => {
@@ -853,6 +917,7 @@ export default function Home() {
 }
 
 function AdminDashboard({ overview }: { overview: Overview }) {
+  const adminUser = overview.users.admin;
   const [selected, setSelected] = useState<HeatmapCell>(overview.heatmap[0]);
   const [departmentFilter, setDepartmentFilter] = useState("All");
   const [actionMessage, setActionMessage] = useState("");
@@ -874,7 +939,7 @@ function AdminDashboard({ overview }: { overview: Overview }) {
     const action = item.status === "Green" ? "Monitoring note saved" : "Owner assigned";
     setActionMessage("");
     try {
-      await saveWorkflowAction(item.workflow, action);
+      await saveWorkflowAction(item.workflow, action, adminUser.name, adminUser.role);
       setActionMessage(
         item.status === "Green"
           ? `${item.workflow}: monitoring note saved for the next weekly check.`
@@ -1112,11 +1177,12 @@ function AuthorityMap({ overview }: { overview: Overview }) {
 }
 
 function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefresh: () => Promise<void> }) {
-  const pathway = overview.pathways["stu-aarav"];
-  const myEnrollments = overview.enrollments.filter((item) => item.student_id === "stu-aarav");
+  const studentUser = overview.users.student;
+  const pathway = overview.pathways[studentUser.id];
+  const myEnrollments = overview.enrollments.filter((item) => item.student_id === studentUser.id);
   const myCourseIds = new Set(myEnrollments.map((item) => item.course_id));
   const myCourses = overview.courses.filter((course) => myCourseIds.has(course.id));
-  const [chatCourse, setChatCourse] = useState(myCourses[0]?.id ?? overview.courses[0]?.id ?? "cs201");
+  const [chatCourse, setChatCourse] = useState(myCourses[0]?.id ?? overview.courses[0]?.id ?? "");
   const [chat, setChat] = useState<ChatMessage[]>(overview.chat_history[chatCourse] ?? []);
   const [draft, setDraft] = useState("Explain dynamic programming overlap in simple terms");
   const [sending, setSending] = useState(false);
@@ -1160,7 +1226,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
     setEnrolling(course.id);
     setActionMessage("");
     try {
-      const result = await enroll(course.id) as { status?: string };
+      const result = await enroll(course.id, studentUser.id) as { status?: string };
       await onRefresh();
       setActionMessage(result.status === "already_enrolled" ? `You are already in ${course.code}.` : `${course.code} has been added to your courses.`);
     } catch (err) {
@@ -1177,7 +1243,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
     setSending(true);
     setChat((current) => [...current, { role: "user", content: question, provider: "student" }]);
     try {
-      const response = await sendTutorMessage(chatCourse, question);
+      const response = await sendTutorMessage(chatCourse, studentUser.id, question);
       setChat(response.history);
     } catch {
       setChat((current) => [
@@ -1473,10 +1539,11 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
 }
 
 function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefresh: () => Promise<void> }) {
+  const facultyUser = overview.users.faculty;
   const [suggestion, setSuggestion] = useState<Record<string, string>>({});
   const [working, setWorking] = useState("");
   const [actionMessage, setActionMessage] = useState("");
-  const activeCourses = overview.courses.filter((course) => course.faculty.includes("Dr. Meena Iyer"));
+  const activeCourses = overview.courses.filter((course) => course.faculty_ids?.includes(facultyUser.id));
   const gradingQueue = overview.submissions.filter((submission) => submission.status !== "Graded");
   const facultyHeatmap = overview.heatmap.filter((cell) => cell.role === "Faculty");
   const assessmentsById = useMemo(
@@ -1488,7 +1555,7 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
     setWorking(submissionId);
     setActionMessage("");
     try {
-      const result = await suggestGrade(submissionId);
+      const result = await suggestGrade(submissionId, facultyUser.id);
       setSuggestion((current) => ({ ...current, [submissionId]: result.suggestion }));
       setActionMessage("AI suggestion is ready for teacher review.");
     } catch {
@@ -1507,7 +1574,7 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
     setWorking(submissionId);
     setActionMessage("");
     try {
-      await applyGrade(submissionId, extractSuggestedScore(feedback), feedback);
+      await applyGrade(submissionId, extractSuggestedScore(feedback), feedback, facultyUser.id);
       await onRefresh();
       setActionMessage("Grade saved and the review queue was updated.");
     } catch {
@@ -1884,17 +1951,12 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
 
         <Panel id="privacy" title="Privacy & Compliance Posture" eyebrow="FERPA / GDPR controls" icon={LockKeyhole}>
           <div className="grid gap-3">
-            {[
-              ["RBAC", "Four roles enforced by API contract and UI scope."],
-              ["Audit log", "Every important action writes actor, role, action, and timestamp."],
-              ["Credential trust", "Certificates verify by SHA-256 hash with testnet-ready fields."],
-              ["Data portability", "Course catalog and certificate data are JSON export ready."],
-            ].map(([title, text]) => (
-              <div key={title} className="flex gap-3 rounded-lg border border-line p-4">
+            {overview.privacy_controls.map((item) => (
+              <div key={item.title} className="flex gap-3 rounded-lg border border-line p-4">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" aria-hidden="true" />
                 <div>
-                  <p className="font-semibold text-ink">{title}</p>
-                  <p className="text-sm text-slate-600">{text}</p>
+                  <p className="font-semibold text-ink">{item.title}</p>
+                  <p className="text-sm text-slate-600">{item.detail}</p>
                 </div>
               </div>
             ))}

@@ -1036,34 +1036,11 @@ CAPACITY_MONITOR = [
 ]
 
 
-API_ENDPOINTS = [
-    "GET /health",
-    "GET /api/v1/overview",
-    "GET /api/v1/search",
-    "GET /api/v1/users/me",
-    "GET /api/v1/courses",
-    "POST /api/v1/enrollments",
-    "GET /api/v1/student/{student_id}/study-plan",
-    "GET /api/v1/student/{student_id}/course-registration",
-    "GET /api/v1/student/{student_id}/certificates",
-    "POST /api/v1/chat/{course_id}/message",
-    "POST /api/v1/grading/suggest",
-    "PATCH /api/v1/submissions/{submission_id}/grade",
-    "POST /api/v1/certificates/verify/{hash}",
-    "GET /api/v1/faculty/{faculty_id}/classes",
-    "GET /api/v1/faculty/{faculty_id}/grading-queue",
-    "GET /api/v1/faculty/course-improvements",
-    "GET /api/v1/admin/campus-kpis",
-    "GET /api/v1/admin/departments-needing-help",
-    "GET /api/v1/admin/workflow-delays",
-    "POST /api/v1/admin/workflow-actions",
-    "GET /api/v1/admin/approval-route",
-    "GET /api/v1/it/system-health",
-    "GET /api/v1/it/dependency-map",
-    "GET /api/v1/it/capacity-monitor",
-    "GET /api/v1/it/api-surface",
-    "GET /api/v1/it/privacy-controls",
-    "GET /api/v1/it/audit-trail",
+PRIVACY_CONTROLS = [
+    {"title": "RBAC", "detail": "Four role workspaces are scoped through explicit role endpoints."},
+    {"title": "Audit log", "detail": "Important write actions persist actor, role, action, risk, and timestamp."},
+    {"title": "Credential trust", "detail": "Certificates verify by SHA-256 compatible hashes."},
+    {"title": "Data portability", "detail": "Campus records are exported through JSON-backed feature endpoints."},
 ]
 
 
@@ -1088,7 +1065,7 @@ PERSISTED_COLLECTIONS = {
     "kpis": "KPI_CARDS",
     "free_tier_stack": "FREE_TIER_STACK",
     "capacity_monitor": "CAPACITY_MONITOR",
-    "api_endpoints": "API_ENDPOINTS",
+    "privacy_controls": "PRIVACY_CONTROLS",
 }
 
 
@@ -1151,7 +1128,7 @@ def snapshot() -> dict:
         "kpis": deepcopy(KPI_CARDS),
         "free_tier_stack": deepcopy(FREE_TIER_STACK),
         "capacity_monitor": deepcopy(CAPACITY_MONITOR),
-        "api_endpoints": deepcopy(API_ENDPOINTS),
+        "privacy_controls": deepcopy(PRIVACY_CONTROLS),
     }
 
 
