@@ -301,9 +301,23 @@ function Panel({
 }) {
   const contentId = useId();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const togglePanel = () => setIsCollapsed((current) => !current);
+
+  function handleSectionClick(event: React.MouseEvent<HTMLElement>) {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const interactive = target.closest("button, a, input, select, textarea, label, [role='button'], [role='link']");
+
+    if (interactive) return;
+    togglePanel();
+  }
 
   return (
-    <section id={id} className={clsx("neo-panel scroll-mt-24 p-4 sm:p-5", className)}>
+    <section
+      id={id}
+      onClick={handleSectionClick}
+      className={clsx("neo-panel cursor-pointer scroll-mt-24 p-4 sm:p-5", className)}
+    >
       <div className={clsx("flex items-start justify-between gap-4", !isCollapsed && "mb-4")}>
         <div className="min-w-0">
           {eyebrow ? <p className="mb-1 font-label text-xs font-bold uppercase text-muted">{eyebrow}</p> : null}
@@ -316,7 +330,7 @@ function Panel({
           {action}
           <button
             type="button"
-            onClick={() => setIsCollapsed((current) => !current)}
+            onClick={togglePanel}
             className="neo-button h-10 w-10 justify-center p-0"
             aria-expanded={!isCollapsed}
             aria-controls={contentId}
@@ -1441,7 +1455,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
               {overview.system.groq_configured ? "AI ready" : "Local guide"}
             </Badge>
           </div>
-          <div className="neo-inset thin-scrollbar h-72 space-y-3 overflow-y-auto p-3">
+          <div className="neo-inset thin-scrollbar h-[380px] space-y-3 overflow-y-auto p-3">
             {chat.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
