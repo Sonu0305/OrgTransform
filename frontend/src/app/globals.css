@@ -161,20 +161,20 @@ textarea:focus-visible {
   }
 
   .neo-icon-button {
-    inline-size: 2.5rem;
-    block-size: 2.5rem;
-    min-inline-size: 2.5rem;
-    min-block-size: 2.5rem;
-    max-inline-size: 2.5rem;
-    max-block-size: 2.5rem;
-    flex: 0 0 2.5rem;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    min-inline-size: 1.75rem;
+    min-block-size: 1.75rem;
+    max-inline-size: 1.75rem;
+    max-block-size: 1.75rem;
+    flex: 0 0 1.75rem;
     padding: 0;
   }
 
   .neo-header-control {
-    block-size: 2.5rem;
-    min-block-size: 2.5rem;
-    max-block-size: 2.5rem;
+    block-size: 1.75rem;
+    min-block-size: 1.75rem;
+    max-block-size: 1.75rem;
     align-items: center;
     justify-content: center;
     padding-block: 0;
