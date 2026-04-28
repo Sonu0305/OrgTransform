@@ -257,6 +257,7 @@ def health() -> dict[str, Any]:
 
 @app.get(f"{settings.api_prefix}/overview")
 def overview() -> dict[str, Any]:
+    db.load_persistent_data()
     payload = db.snapshot()
     payload["api_endpoints"] = visible_api_surface()
     payload["system"] = system_payload()
