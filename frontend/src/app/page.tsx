@@ -176,25 +176,52 @@ const formatTime = (value: string) =>
     minute: "2-digit",
   }).format(new Date(value));
 
+const CHART_COLORS = {
+  primary: "var(--color-primary)",
+  success: "var(--color-success)",
+  warning: "var(--color-warning)",
+  danger: "var(--color-danger)",
+  line: "var(--color-line)",
+  text: "var(--color-text)",
+  muted: "var(--color-muted)",
+  secondary: "var(--color-secondary)",
+};
+
+const CHART_TOOLTIP_STYLE = {
+  backgroundColor: "var(--color-secondary)",
+  border: "1px solid var(--color-line)",
+  borderRadius: "var(--radius-md)",
+  boxShadow: "var(--shadow-raised)",
+  color: "var(--color-text)",
+};
+
 function bandClasses(band: string) {
-  if (band === "High") return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (band === "Moderate") return "border-sky-200 bg-sky-50 text-sky-800";
-  if (band === "Low") return "border-amber-200 bg-amber-50 text-amber-800";
-  return "border-rose-200 bg-rose-50 text-rose-800";
+  if (band === "High") return "neo-status-success";
+  if (band === "Moderate") return "neo-status-info";
+  if (band === "Low") return "neo-status-warning";
+  return "neo-status-danger";
+}
+
+function bandToneClasses(band: string) {
+  if (band === "High") return "bg-success";
+  if (band === "Moderate") return "bg-primary";
+  if (band === "Low") return "bg-warning";
+  return "bg-danger";
 }
 
 function riskClasses(value: string) {
-  if (["Green", "Low", "Verified", "Complete"].includes(value)) return "border-emerald-200 bg-emerald-50 text-emerald-800";
-  if (["Amber", "Medium", "Scheduled", "Tamper-evident"].includes(value)) return "border-amber-200 bg-amber-50 text-amber-800";
-  if (["Red", "High", "Critical"].includes(value)) return "border-rose-200 bg-rose-50 text-rose-800";
-  return "border-slate-200 bg-slate-50 text-slate-700";
+  if (["Green", "Low", "Verified", "Complete", "Active", "Joined", "Graded"].includes(value)) return "neo-status-success";
+  if (["Amber", "Medium", "Scheduled", "Tamper-evident", "Submitted", "Needs Review", "Waitlisted"].includes(value)) return "neo-status-warning";
+  if (["Red", "High", "Critical"].includes(value)) return "neo-status-danger";
+  return "neo-status-info";
 }
 
 function toneClasses(tone: string) {
-  if (tone === "green") return "from-emerald-500 to-teal-500";
-  if (tone === "blue") return "from-sky-500 to-cyan-500";
-  if (tone === "amber") return "from-amber-500 to-orange-500";
-  return "from-slate-500 to-slate-600";
+  if (tone === "green") return "bg-success";
+  if (tone === "blue") return "bg-primary";
+  if (tone === "amber") return "bg-warning";
+  if (tone === "danger") return "bg-danger";
+  return "bg-text";
 }
 
 function friendlyMetricLabel(label: string) {
@@ -271,12 +298,12 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section id={id} className={clsx("scroll-mt-24 rounded-lg border border-line bg-white p-5 shadow-panel", className)}>
+    <section id={id} className={clsx("neo-panel scroll-mt-24 p-4 sm:p-5", className)}>
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0">
-          {eyebrow ? <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{eyebrow}</p> : null}
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-ink">
-            {Icon ? <Icon className="h-5 w-5 text-sky-600" aria-hidden="true" /> : null}
+          {eyebrow ? <p className="mb-1 font-label text-xs font-bold uppercase text-muted">{eyebrow}</p> : null}
+          <h2 className="flex items-center gap-2 text-lg font-bold text-text">
+            {Icon ? <Icon className="h-5 w-5 text-primary" aria-hidden="true" /> : null}
             <span className="truncate">{title}</span>
           </h2>
         </div>
@@ -289,43 +316,50 @@ function Panel({
 
 function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <span className={clsx("inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold", className)}>
+    <span className={clsx("neo-badge px-2.5 py-1 text-xs font-bold", className)}>
       {children}
     </span>
   );
 }
 
-function ProgressBar({ value, tone = "bg-sky-500" }: { value: number; tone?: string }) {
+function ProgressBar({ value, tone = "bg-primary" }: { value: number; tone?: string }) {
+  const clamped = Math.max(0, Math.min(value, 100));
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-      <div className={clsx("h-full rounded-full", tone)} style={{ width: `${Math.max(0, Math.min(value, 100))}%` }} />
+    <div
+      className="neo-inset h-2.5 w-full overflow-hidden rounded-sm"
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={clamped}
+    >
+      <div className={clsx("h-full rounded-sm shadow-neo-soft", tone)} style={{ width: `${clamped}%` }} />
     </div>
   );
 }
 
 function Notice({ tone = "success", children }: { tone?: "success" | "warning" | "info"; children: React.ReactNode }) {
   const styles = {
-    success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    warning: "border-amber-200 bg-amber-50 text-amber-800",
-    info: "border-sky-200 bg-sky-50 text-sky-800",
+    success: "neo-status-success",
+    warning: "neo-status-warning",
+    info: "neo-status-info",
   };
-  return <div className={clsx("rounded-lg border px-3 py-2 text-sm font-medium", styles[tone])}>{children}</div>;
+  return <div className={clsx("neo-panel px-3 py-2 text-sm font-bold", styles[tone])}>{children}</div>;
 }
 
 function RoleIntro({ title, description, steps }: { title: string; description: string; steps: string[] }) {
   return (
-    <section className="rounded-lg border border-line bg-white p-5 shadow-panel">
+    <section className="neo-panel p-4 sm:p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">What this role does</p>
-          <h2 className="mt-1 text-2xl font-semibold text-ink">{title}</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+          <p className="font-label text-xs font-bold uppercase text-muted">What this role does</p>
+          <h2 className="mt-1 text-2xl font-bold text-text">{title}</h2>
+          <p className="mt-2 text-sm leading-6 text-text/75">{description}</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[420px]">
           {steps.map((step, index) => (
-            <div key={step} className="rounded-lg border border-line bg-slate-50 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Step {index + 1}</p>
-              <p className="mt-1 text-sm font-semibold text-ink">{step}</p>
+            <div key={step} className="neo-inset p-3">
+              <p className="font-label text-xs font-bold uppercase text-muted">Step {index + 1}</p>
+              <p className="mt-1 text-sm font-bold text-text">{step}</p>
             </div>
           ))}
         </div>
@@ -336,13 +370,15 @@ function RoleIntro({ title, description, steps }: { title: string; description: 
 
 function MetricCard({ label, value, delta, tone }: { label: string; value: string; delta: string; tone: string }) {
   return (
-    <div className="relative overflow-hidden rounded-lg border border-white/70 bg-white/92 p-4 shadow-panel">
-      <div className={clsx("absolute right-0 top-0 h-16 w-20 rounded-bl-[48px] bg-gradient-to-br opacity-16", toneClasses(tone))} />
-      <div className={clsx("mb-4 h-1.5 w-16 rounded-full bg-gradient-to-r", toneClasses(tone))} />
-      <p className="text-sm font-medium text-slate-500">{friendlyMetricLabel(label)}</p>
+    <div className="neo-panel relative overflow-hidden p-4">
+      <div className={clsx("absolute left-0 top-0 h-full w-1.5", toneClasses(tone))} />
+      <div className="mb-4 flex items-center gap-2">
+        <span className={clsx("h-2.5 w-2.5 rounded-sm shadow-neo-soft", toneClasses(tone))} aria-hidden="true" />
+        <p className="text-sm font-bold text-muted">{friendlyMetricLabel(label)}</p>
+      </div>
       <div className="mt-2 flex items-end justify-between gap-3">
-        <p className="text-2xl font-semibold text-ink">{value}</p>
-        <Badge className="border-slate-200 bg-slate-50 text-slate-700">{delta}</Badge>
+        <p className="text-2xl font-bold text-text">{value}</p>
+        <Badge className="neo-status-info">{delta}</Badge>
       </div>
     </div>
   );
@@ -350,15 +386,15 @@ function MetricCard({ label, value, delta, tone }: { label: string; value: strin
 
 function FormattedAiText({ content, inverse = false }: { content: string; inverse?: boolean }) {
   return (
-    <div className={clsx("space-y-2 leading-6", inverse ? "text-white/90" : "text-slate-700")}>
+    <div className={clsx("space-y-2 leading-6", inverse ? "text-secondary" : "text-text/80")}>
       <ReactMarkdown
         components={{
-          h1: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
-          h2: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
-          h3: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
-          h4: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
+          h1: ({ children }) => <p className={clsx("text-sm font-bold", inverse ? "text-secondary" : "text-text")}>{children}</p>,
+          h2: ({ children }) => <p className={clsx("text-sm font-bold", inverse ? "text-secondary" : "text-text")}>{children}</p>,
+          h3: ({ children }) => <p className={clsx("text-sm font-bold", inverse ? "text-secondary" : "text-text")}>{children}</p>,
+          h4: ({ children }) => <p className={clsx("text-sm font-bold", inverse ? "text-secondary" : "text-text")}>{children}</p>,
           p: ({ children }) => <p>{children}</p>,
-          strong: ({ children }) => <strong className={clsx("font-semibold", inverse ? "text-white" : "text-ink")}>{children}</strong>,
+          strong: ({ children }) => <strong className={clsx("font-bold", inverse ? "text-secondary" : "text-text")}>{children}</strong>,
           ul: ({ children }) => <ul className="list-disc space-y-1 pl-4">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal space-y-1 pl-4">{children}</ol>,
           li: ({ children }) => <li>{children}</li>,
@@ -367,13 +403,13 @@ function FormattedAiText({ content, inverse = false }: { content: string; invers
             return block ? (
               <code className="block whitespace-pre-wrap">{children}</code>
             ) : (
-              <code className={clsx("rounded border px-1.5 py-0.5 font-mono text-[0.86em]", inverse ? "border-white/25 bg-white/10" : "border-slate-200 bg-slate-100 text-slate-800")}>
+              <code className={clsx("rounded-sm border px-1.5 py-0.5 font-mono text-[0.86em]", inverse ? "border-secondary/30 bg-secondary/10" : "border-line bg-surface text-text")}>
                 {children}
               </code>
             );
           },
           pre: ({ children }) => (
-            <pre className={clsx("overflow-x-auto rounded-lg p-3 text-xs", inverse ? "bg-white/10 text-white" : "bg-slate-100 text-slate-800")}>
+            <pre className={clsx("overflow-x-auto rounded-md p-3 text-xs shadow-inset", inverse ? "bg-secondary/10 text-secondary" : "bg-surface text-text")}>
               {children}
             </pre>
           ),
@@ -419,11 +455,11 @@ function GlobalSearch({ items, onSelect }: { items: SearchItem[]; onSelect: (ite
     <div ref={rootRef} className="relative order-last w-full lg:order-none lg:max-w-xl">
       <div
         className={clsx(
-          "flex h-11 items-center gap-2 rounded-lg border bg-white/95 px-3 shadow-sm transition",
-          open ? "border-slate-300 shadow-panel" : "border-line hover:border-slate-300",
+          "neo-input flex h-11 items-center gap-2 px-3 transition",
+          open ? "border-primary/45" : "hover:border-primary/35",
         )}
       >
-        <Search className="h-4 w-4 text-slate-400" aria-hidden="true" />
+        <Search className="h-4 w-4 text-primary" aria-hidden="true" />
         <input
           value={query}
           onChange={(event) => {
@@ -436,7 +472,7 @@ function GlobalSearch({ items, onSelect }: { items: SearchItem[]; onSelect: (ite
             if (event.key === "Escape") setOpen(false);
             if (event.key === "Tab") setOpen(false);
           }}
-          className="min-w-0 flex-1 bg-transparent text-sm font-medium text-ink outline-none placeholder:text-slate-400 focus-visible:outline-none"
+          className="min-w-0 flex-1 bg-transparent text-sm font-bold text-text outline-none placeholder:text-muted/70 focus-visible:outline-none"
           placeholder="Search courses, people, certificates"
         />
         {query ? (
@@ -446,19 +482,19 @@ function GlobalSearch({ items, onSelect }: { items: SearchItem[]; onSelect: (ite
               setQuery("");
               setOpen(false);
             }}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="neo-button h-7 w-7 p-0 text-muted"
             aria-label="Clear search"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         ) : (
-          <Command className="h-4 w-4 text-slate-300" aria-hidden="true" />
+          <Command className="h-4 w-4 text-muted/60" aria-hidden="true" />
         )}
       </div>
 
       {open ? (
         <div
-          className="absolute left-0 right-0 top-[3.25rem] z-50 overflow-hidden rounded-lg border border-line bg-white shadow-panel"
+          className="neo-panel absolute left-0 right-0 top-[3.25rem] z-50 overflow-hidden"
           onMouseDown={(event) => event.preventDefault()}
         >
           <div className="max-h-[380px] overflow-y-auto p-2">
@@ -470,21 +506,21 @@ function GlobalSearch({ items, onSelect }: { items: SearchItem[]; onSelect: (ite
                     key={item.id}
                     type="button"
                     onClick={() => pick(item)}
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left transition hover:bg-slate-50"
+                    className="neo-nav-item flex w-full items-center gap-3 px-3 py-3 text-left"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                    <span className="neo-icon h-9 w-9 shrink-0">
                       <Icon className="h-4 w-4" aria-hidden="true" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-ink">{item.title}</span>
-                      <span className="block truncate text-xs text-slate-500">{item.subtitle}</span>
+                      <span className="block truncate text-sm font-bold text-text">{item.title}</span>
+                      <span className="block truncate text-xs text-muted">{item.subtitle}</span>
                     </span>
-                    <ChevronRight className="h-4 w-4 text-slate-300" aria-hidden="true" />
+                    <ChevronRight className="h-4 w-4 text-primary" aria-hidden="true" />
                   </button>
                 );
               })
             ) : (
-              <div className="px-3 py-8 text-center text-sm text-slate-500">No matching record</div>
+              <div className="neo-empty px-3 py-8 text-center text-sm font-bold text-muted">No matching record</div>
             )}
           </div>
         </div>
@@ -514,15 +550,15 @@ function LoginScreen({
 
   return (
     <main className="min-h-screen lg:h-screen lg:overflow-hidden">
-      <header className="border-b border-line bg-white/92 backdrop-blur">
+      <header className="border-b border-line bg-secondary/92 shadow-neo-soft backdrop-blur">
         <div className="mx-auto flex max-w-[1380px] flex-wrap items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-secondary">
               <GraduationCap className="h-6 w-6" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold text-ink sm:text-lg">CMIS Course Management</h1>
-              <p className="hidden text-xs text-slate-500 sm:block">Course Management Information System</p>
+              <h1 className="truncate text-base font-bold text-text sm:text-lg">CMIS Course Management</h1>
+              <p className="hidden text-xs text-muted sm:block">Course Management Information System</p>
             </div>
           </div>
 
@@ -530,10 +566,10 @@ function LoginScreen({
             <Badge
               className={
                 apiState === "live"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  ? "neo-status-success"
                   : apiState === "loading"
-                    ? "border-sky-200 bg-sky-50 text-sky-800"
-                    : "border-amber-200 bg-amber-50 text-amber-800"
+                    ? "neo-status-info"
+                    : "neo-status-warning"
               }
             >
               System {apiState === "live" ? "online" : apiState === "offline" ? "offline" : "checking"}
@@ -541,7 +577,7 @@ function LoginScreen({
             <button
               type="button"
               onClick={() => void onRefresh()}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-white text-slate-600 hover:bg-slate-50"
+              className="neo-button h-9 w-9 p-0"
               aria-label="Refresh campus data"
             >
               <RefreshCw className="h-4 w-4" aria-hidden="true" />
@@ -551,17 +587,17 @@ function LoginScreen({
       </header>
 
       <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-97px)] xl:grid-cols-[300px_minmax(0,1fr)]">
-        <section className="flex flex-col rounded-lg border border-line bg-white p-4 shadow-panel">
+        <section className="neo-panel flex flex-col p-4">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 ring-1 ring-sky-100">
+            <span className="neo-icon h-10 w-10 shrink-0">
               <LayoutGrid className="h-5 w-5" aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Select workspace</p>
-              <h2 className="mt-1 text-lg font-semibold text-ink">Campus Course Hub</h2>
+              <p className="font-label text-xs font-bold uppercase tracking-normal text-muted">Select workspace</p>
+              <h2 className="mt-1 text-lg font-bold text-text">Campus Course Hub</h2>
             </div>
           </div>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
+          <p className="mt-3 text-sm leading-6 text-text/75">
             Role-based access for registration, teaching review, academic operations, privacy, and campus workflow tracking.
           </p>
 
@@ -569,13 +605,13 @@ function LoginScreen({
             {proofPoints.map((point) => {
               const Icon = point.icon;
               return (
-                <div key={point.label} className="rounded-lg border border-line bg-slate-50 px-2 py-2">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-sky-600 shadow-sm">
+                <div key={point.label} className="neo-inset px-2 py-2">
+                  <span className="neo-icon h-7 w-7">
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span className="mt-2 block min-w-0">
-                    <span className="block truncate text-sm font-semibold text-ink">{point.value}</span>
-                    <span className="block truncate text-[11px] text-slate-500">{point.label}</span>
+                    <span className="block truncate text-sm font-bold text-text">{point.value}</span>
+                    <span className="block truncate text-[11px] text-muted">{point.label}</span>
                   </span>
                 </div>
               );
@@ -583,17 +619,17 @@ function LoginScreen({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
-            <Badge className="border-emerald-200 bg-emerald-50 text-emerald-800">Persistent records</Badge>
-            <Badge className={overview.system.groq_configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}>
+            <Badge className="neo-status-success">Persistent records</Badge>
+            <Badge className={overview.system.groq_configured ? "neo-status-success" : "border-line bg-surface/70 text-text/85"}>
               AI {overview.system.groq_configured ? "ready" : "local"}
             </Badge>
           </div>
-          {error ? <p className="mt-3 text-xs leading-5 text-amber-700">Live data unavailable: {error.slice(0, 120)}</p> : null}
+          {error ? <p className="mt-3 text-xs leading-5 text-text">Live data unavailable: {error.slice(0, 120)}</p> : null}
 
-          <div className="mt-4 rounded-lg border border-line bg-slate-50 p-3">
+          <div className="neo-inset mt-4 p-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Workspace focus</p>
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+              <p className="font-label text-xs font-bold uppercase tracking-normal text-muted">Workspace focus</p>
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
             </div>
             <div className="mt-3 grid gap-2">
               {[
@@ -601,9 +637,9 @@ function LoginScreen({
                 ["Handoffs", "Student, faculty, ops, IT"],
                 ["Traceability", "Records and status history"],
               ].map(([label, value]) => (
-                <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-white px-3 py-1.5 text-xs shadow-sm">
-                  <span className="font-semibold text-ink">{label}</span>
-                  <span className="text-right text-slate-500">{value}</span>
+                <div key={label} className="flex items-center justify-between gap-3 rounded-md bg-secondary px-3 py-1.5 text-xs shadow-neo-soft">
+                  <span className="font-bold text-text">{label}</span>
+                  <span className="text-right text-muted">{value}</span>
                 </div>
               ))}
             </div>
@@ -613,8 +649,8 @@ function LoginScreen({
         <section className="min-w-0 lg:flex lg:min-h-0 lg:flex-col">
           <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Available logins</p>
-              <h2 className="text-xl font-semibold text-ink sm:text-2xl">Choose your role</h2>
+              <p className="font-label text-xs font-bold uppercase tracking-normal text-muted">Available logins</p>
+              <h2 className="text-xl font-bold text-text sm:text-2xl">Choose your role</h2>
             </div>
           </div>
 
@@ -627,18 +663,18 @@ function LoginScreen({
                   key={option.key}
                   type="button"
                   onClick={() => onSelectRole(option.key)}
-                  className="group flex min-h-[210px] flex-col rounded-lg border border-line bg-white p-4 text-left shadow-panel transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
+                  className="neo-panel group flex min-h-[210px] flex-col p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-neo"
                 >
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-700 transition group-hover:bg-ink group-hover:text-white">
+                    <div className="neo-icon h-10 w-10 transition group-hover:bg-primary group-hover:text-secondary">
                       <Icon className="h-5 w-5" aria-hidden="true" />
                     </div>
-                    <Badge className="border-slate-200 bg-slate-50 text-slate-700">{person.avatar}</Badge>
+                    <Badge className="border-line bg-surface/70 text-text/85">{person.avatar}</Badge>
                   </div>
-                  <p className="mt-3 text-lg font-semibold text-ink">{option.loginTitle}</p>
-                  <p className="mt-1 text-sm font-medium text-slate-500">{person.name} · {person.department}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{option.description}</p>
-                  <div className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-sm font-semibold text-ink">
+                  <p className="mt-3 text-lg font-bold text-text">{option.loginTitle}</p>
+                  <p className="mt-1 text-sm font-bold text-muted">{person.name} · {person.department}</p>
+                  <p className="mt-2 text-sm leading-6 text-text/75">{option.description}</p>
+                  <div className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-sm font-bold text-text">
                     Enter workspace
                     <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
                   </div>
@@ -663,21 +699,21 @@ function StartupScreen({
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <section className="w-full max-w-md rounded-lg border border-line bg-white p-5 shadow-panel">
+      <section className="neo-panel w-full max-w-md p-5">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink text-white">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-secondary">
             <GraduationCap className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h1 className="text-lg font-semibold text-ink">CMIS Course Management</h1>
-            <p className="text-sm text-slate-500">{apiState === "loading" ? "Loading persisted campus records" : "Backend data is unavailable"}</p>
+            <h1 className="text-lg font-bold text-text">CMIS Course Management</h1>
+            <p className="text-sm text-muted">{apiState === "loading" ? "Loading persisted campus records" : "Backend data is unavailable"}</p>
           </div>
         </div>
         {error ? <Notice tone="warning">Connect the API service and refresh: {error.slice(0, 140)}</Notice> : null}
         <button
           type="button"
           onClick={() => void onRefresh()}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white"
+          className="neo-button neo-button-primary mt-4 w-full px-4 py-2"
         >
           <RefreshCw className="h-4 w-4" aria-hidden="true" />
           Refresh data
@@ -844,15 +880,15 @@ function AppShell({
 
   return (
     <main className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-line bg-white/92 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-secondary/92 shadow-neo-soft backdrop-blur">
         <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-ink text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-secondary">
               <GraduationCap className="h-6 w-6" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-base font-semibold text-ink sm:text-lg">CMIS Course Management</h1>
-              <p className="hidden text-xs text-slate-500 sm:block">{roleOptions.find((option) => option.key === role)?.label} workspace</p>
+              <h1 className="truncate text-base font-bold text-text sm:text-lg">CMIS Course Management</h1>
+              <p className="hidden text-xs text-muted sm:block">{roleOptions.find((option) => option.key === role)?.label} workspace</p>
             </div>
           </div>
 
@@ -862,26 +898,26 @@ function AppShell({
             <Badge
               className={
                 apiState === "live"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  ? "neo-status-success"
                   : apiState === "loading"
-                    ? "border-sky-200 bg-sky-50 text-sky-800"
-                    : "border-amber-200 bg-amber-50 text-amber-800"
+                    ? "neo-status-info"
+                    : "neo-status-warning"
               }
             >
               System {apiState === "live" ? "online" : apiState === "offline" ? "offline" : "checking"}
             </Badge>
-            <Badge className={overview.system.groq_configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}>
+            <Badge className={overview.system.groq_configured ? "neo-status-success" : "border-line bg-surface/70 text-text/85"}>
               AI {overview.system.groq_configured ? "ready" : "local"}
             </Badge>
             <button
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-white text-slate-600 hover:bg-slate-50"
+              className="neo-button h-9 w-9 p-0"
               onClick={() => void refreshData()}
               aria-label="Refresh campus data"
             >
               <RefreshCw className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
-              className="inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="neo-button px-3 py-2"
               onClick={() => setRole(null)}
             >
               Change login
@@ -891,23 +927,23 @@ function AppShell({
       </header>
 
       <div className="mx-auto grid w-full max-w-[1380px] min-w-0 items-start gap-5 px-4 py-5 sm:px-6 xl:grid-cols-[minmax(0,250px)_minmax(0,1fr)]">
-        <aside className="thin-scrollbar flex w-full min-w-0 flex-col overflow-hidden rounded-lg border border-line bg-white/94 p-4 shadow-panel xl:sticky xl:top-[85px] xl:max-h-[calc(100vh-105px)] xl:overflow-y-auto">
+        <aside className="neo-panel thin-scrollbar flex w-full min-w-0 flex-col overflow-hidden p-4 xl:sticky xl:top-[85px] xl:max-h-[calc(100vh-105px)] xl:overflow-y-auto">
           <div className="flex min-w-0 items-center gap-3 border-b border-line pb-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-sky-500 via-emerald-500 to-amber-400 text-sm font-bold text-white shadow-sm">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-secondary shadow-neo-soft">
               {user.avatar}
             </div>
             <div className="min-w-0">
-              <p className="truncate font-semibold text-ink">{user.name}</p>
-              <p className="truncate text-sm text-slate-500">{friendlyRoleLabel(user.role)} · {user.department}</p>
+              <p className="truncate font-bold text-text">{user.name}</p>
+              <p className="truncate text-sm text-muted">{friendlyRoleLabel(user.role)} · {user.department}</p>
             </div>
           </div>
 
-          <div className="mt-4 min-w-0 rounded-lg border border-sky-100 bg-sky-50 p-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-700">Role purpose</p>
-            <p className="mt-1 break-words text-sm text-sky-900">{roleOptions.find((option) => option.key === role)?.demoPitch}</p>
+          <div className="neo-inset mt-4 min-w-0 p-3">
+            <p className="font-label text-xs font-bold uppercase tracking-normal text-primary">Role purpose</p>
+            <p className="mt-1 break-words text-sm text-text">{roleOptions.find((option) => option.key === role)?.demoPitch}</p>
           </div>
 
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Jump to</p>
+          <p className="mt-5 font-label text-xs font-bold uppercase tracking-normal text-muted/75">Jump to</p>
           <nav className="mt-2 space-y-1">
             {navByRole[activeRole].map((item) => {
               const Icon = item.icon;
@@ -916,40 +952,40 @@ function AppShell({
                   key={item.label}
                   type="button"
                   onClick={() => scrollToSection(item.id)}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-ink"
+                  className="neo-nav-item flex w-full items-center gap-3 px-3 py-2 text-left text-sm font-bold"
                 >
-                  <Icon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                  <Icon className="h-4 w-4 shrink-0 text-muted/75" aria-hidden="true" />
                   <span className="min-w-0 truncate">{item.label}</span>
                 </button>
               );
             })}
           </nav>
 
-          <div className="mt-5 flex min-w-0 flex-1 flex-col rounded-lg border border-line bg-slate-50 p-3">
+          <div className="neo-inset mt-5 flex min-w-0 flex-1 flex-col p-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Workspace pulse</p>
-              <Activity className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+              <p className="min-w-0 truncate font-label text-xs font-bold uppercase tracking-normal text-muted">Workspace pulse</p>
+              <Activity className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
             </div>
             <div className="mt-3 space-y-2">
               {sidebarDetailsByRole[activeRole].map((detail) => (
-                <div key={detail.label} className="min-w-0 rounded-md bg-white px-3 py-2 shadow-sm">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">{detail.label}</p>
-                  <p className="mt-1 break-words text-sm font-medium leading-5 text-slate-700">{detail.value}</p>
+                <div key={detail.label} className="min-w-0 rounded-md bg-secondary px-3 py-2 shadow-neo-soft">
+                  <p className="font-label text-[11px] font-bold uppercase tracking-normal text-muted/75">{detail.label}</p>
+                  <p className="mt-1 break-words text-sm font-bold leading-5 text-text/85">{detail.value}</p>
                 </div>
               ))}
             </div>
             <div className="mt-auto pt-3">
-              <div className="rounded-md border border-emerald-100 bg-emerald-50 px-3 py-2">
+              <div className="neo-status-success rounded-md px-3 py-2">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
-                  <p className="text-sm font-semibold text-emerald-900">Ready for demo</p>
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                  <p className="text-sm font-bold text-text">Ready for demo</p>
                 </div>
-                <p className="mt-1 text-xs leading-5 text-emerald-800">Every role page now carries context through the full sidebar height.</p>
+                <p className="mt-1 text-xs leading-5 text-text">Every role page now carries context through the full sidebar height.</p>
               </div>
             </div>
           </div>
 
-          {error ? <p className="mt-4 text-xs text-amber-700">Local service unavailable: {error.slice(0, 110)}</p> : null}
+          {error ? <p className="mt-4 text-xs text-text">Local service unavailable: {error.slice(0, 110)}</p> : null}
         </aside>
 
         <div className="min-w-0">
@@ -1021,7 +1057,7 @@ function AdminDashboard({ overview }: { overview: Overview }) {
             <select
               value={departmentFilter}
               onChange={(event) => setDepartmentFilter(event.target.value)}
-              className="rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-slate-700"
+              className="neo-input px-3 py-2 text-sm font-bold text-text"
               aria-label="Filter department usage"
             >
               {departments.map((department) => (
@@ -1038,32 +1074,32 @@ function AdminDashboard({ overview }: { overview: Overview }) {
                 key={`${cell.department}-${cell.role}`}
                 onClick={() => setSelected(cell)}
                 className={clsx(
-                  "rounded-lg border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-panel",
+                  "neo-panel-soft p-4 text-left transition hover:-translate-y-0.5 hover:shadow-neo",
                   bandClasses(cell.band),
-                  selected.department === cell.department && selected.role === cell.role ? "ring-2 ring-ink/20" : "",
+                  selected.department === cell.department && selected.role === cell.role ? "ring-2 ring-primary/30" : "",
                 )}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold">{cell.department}</p>
-                  <Badge className="border-current bg-white/60 text-current">{cell.role === "Faculty" ? "Teachers" : "Students"}</Badge>
+                  <p className="font-bold">{cell.department}</p>
+                  <Badge className="border-current bg-secondary/70 text-current">{cell.role === "Faculty" ? "Teachers" : "Students"}</Badge>
                 </div>
-                <p className="mt-3 text-3xl font-semibold">{cell.score.toFixed(1)}</p>
-                <div className="mt-3 space-y-2 text-xs font-medium">
+                <p className="mt-3 text-3xl font-bold">{cell.score.toFixed(1)}</p>
+                <div className="mt-3 space-y-2 text-xs font-bold">
                   <div className="flex items-center justify-between">
                     <span>Login</span>
                     <span>{cell.login_frequency}%</span>
                   </div>
-                  <ProgressBar value={cell.login_frequency} tone="bg-current" />
+                  <ProgressBar value={cell.login_frequency} tone={bandToneClasses(cell.band)} />
                 </div>
               </button>
             ))}
           </div>
-          <div className="mt-4 rounded-lg border border-line bg-slate-50 p-4">
+          <div className="neo-inset mt-4 p-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className={bandClasses(selected.band)}>{friendlyStatus(selected.band)} usage</Badge>
-              <Badge className="border-slate-200 bg-white text-slate-700">Mood {(selected.sentiment * 100).toFixed(0)}%</Badge>
+              <Badge className="border-line bg-secondary text-text/85">Mood {(selected.sentiment * 100).toFixed(0)}%</Badge>
             </div>
-            <p className="mt-3 text-sm font-medium text-ink">
+            <p className="mt-3 text-sm font-bold text-text">
               {selected.department} {selected.role === "Faculty" ? "teacher" : "student"} details
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -1071,7 +1107,7 @@ function AdminDashboard({ overview }: { overview: Overview }) {
               <Signal label="Class discussion" value={selected.forum_participation} />
               <Signal label="Visits" value={selected.login_frequency} />
             </div>
-            <p className="mt-3 text-sm text-slate-600">{selected.negative_clusters.join("; ")}</p>
+            <p className="mt-3 text-sm text-text/75">{selected.negative_clusters.join("; ")}</p>
           </div>
         </Panel>
 
@@ -1079,11 +1115,11 @@ function AdminDashboard({ overview }: { overview: Overview }) {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={debtData} margin={{ left: -20, right: 12 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="workflow" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="score" radius={[6, 6, 0, 0]} fill="#0ea5e9" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.line} />
+                <XAxis dataKey="workflow" tick={{ fontSize: 12, fill: CHART_COLORS.muted }} />
+                <YAxis tick={{ fontSize: 12, fill: CHART_COLORS.muted }} />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                <Bar dataKey="score" radius={[6, 6, 0, 0]} fill={CHART_COLORS.primary} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1116,11 +1152,11 @@ function AdminDashboard({ overview }: { overview: Overview }) {
 function Signal({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500">
+      <div className="mb-1 flex justify-between text-xs font-bold text-muted">
         <span>{label}</span>
         <span>{value}%</span>
       </div>
-      <ProgressBar value={value} tone={value > 75 ? "bg-emerald-500" : value > 55 ? "bg-amber-500" : "bg-rose-500"} />
+      <ProgressBar value={value} tone={value > 75 ? "bg-success" : value > 55 ? "bg-warning" : "bg-danger"} />
     </div>
   );
 }
@@ -1128,34 +1164,34 @@ function Signal({ label, value }: { label: string; value: number }) {
 function ProcessDebtRow({ item, onCreatePlan }: { item: ProcessDebt; onCreatePlan: () => void }) {
   const isHealthy = item.status === "Green";
   return (
-    <div className="rounded-lg border border-line p-3">
+    <div className="neo-panel-soft p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="font-semibold text-ink">{item.workflow}</p>
-          <p className="text-sm text-slate-500">{item.recommendations.join(" · ")}</p>
+          <p className="font-bold text-text">{item.workflow}</p>
+          <p className="text-sm text-muted">{item.recommendations.join(" · ")}</p>
         </div>
         <Badge className={riskClasses(item.status)}>{friendlyStatus(item.status)}</Badge>
       </div>
       <div className="mt-3 flex items-center gap-3">
-        <ProgressBar value={item.percentile} tone={item.status === "Red" ? "bg-rose-500" : item.status === "Amber" ? "bg-amber-500" : "bg-emerald-500"} />
-        <span className="w-12 text-right text-sm font-semibold text-slate-700">{item.score.toFixed(1)}</span>
+        <ProgressBar value={item.percentile} tone={item.status === "Red" ? "bg-danger" : item.status === "Amber" ? "bg-warning" : "bg-success"} />
+        <span className="w-12 text-right text-sm font-bold text-text/85">{item.score.toFixed(1)}</span>
       </div>
-      <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+      <div className="mt-3 grid gap-2 text-xs text-muted sm:grid-cols-3">
         <span>{item.steps} steps</span>
         <span>{item.revision_count} revisions</span>
         <span>{item.avg_approval_days} avg days</span>
       </div>
       {item.last_action ? (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-muted">
           Last action: {item.last_action.action} by {item.last_action.actor}
         </p>
       ) : null}
       <button
         type="button"
         onClick={onCreatePlan}
-        className="mt-3 inline-flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+        className="neo-button mt-3 px-3 py-2"
       >
-        <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+        <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />
         {isHealthy ? "Monitor" : "Assign fix"}
       </button>
     </div>
@@ -1164,32 +1200,32 @@ function ProcessDebtRow({ item, onCreatePlan }: { item: ProcessDebt; onCreatePla
 
 function AuthorityMap({ overview }: { overview: Overview }) {
   const normalSteps = [
-    { id: "faculty", label: "Teacher", detail: "Starts request", icon: BookOpen, tone: "bg-sky-500" },
-    { id: "hod", label: "Dept. Head", detail: "Reviews", icon: ShieldCheck, tone: "bg-amber-500" },
-    { id: "committee", label: "Course Team", detail: "Checks quality", icon: Users, tone: "bg-emerald-500" },
-    { id: "registrar", label: "Registrar", detail: "Approves", icon: BadgeCheck, tone: "bg-cyan-500" },
-    { id: "archive", label: "Records", detail: "Stores decision", icon: FileCheck2, tone: "bg-slate-600" },
+    { id: "faculty", label: "Teacher", detail: "Starts request", icon: BookOpen, tone: "bg-primary" },
+    { id: "hod", label: "Dept. Head", detail: "Reviews", icon: ShieldCheck, tone: "bg-warning" },
+    { id: "committee", label: "Course Team", detail: "Checks quality", icon: Users, tone: "bg-success" },
+    { id: "registrar", label: "Registrar", detail: "Approves", icon: BadgeCheck, tone: "bg-primary" },
+    { id: "archive", label: "Records", detail: "Stores decision", icon: FileCheck2, tone: "bg-text" },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-line bg-gradient-to-br from-slate-50 to-sky-50/70 p-4">
+      <div className="neo-inset p-4">
         <div className="grid gap-3 lg:grid-cols-5">
           {normalSteps.map((step, index) => {
             const Icon = step.icon;
             return (
               <div key={step.id} className="relative">
-                <div className="rounded-lg border border-white/70 bg-white p-4 shadow-sm">
-                  <div className={clsx("mb-3 flex h-10 w-10 items-center justify-center rounded-lg text-white", step.tone)}>
+                <div className="neo-panel-soft p-4">
+                  <div className={clsx("mb-3 flex h-10 w-10 items-center justify-center rounded-lg text-secondary", step.tone)}>
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </div>
-                  <p className="text-base font-semibold text-ink">{step.label}</p>
-                  <p className="mt-1 text-sm text-slate-500">{step.detail}</p>
+                  <p className="text-base font-bold text-text">{step.label}</p>
+                  <p className="mt-1 text-sm text-muted">{step.detail}</p>
                 </div>
                 {index < normalSteps.length - 1 ? (
                   <div className="hidden lg:block">
-                    <div className="absolute left-[calc(100%-2px)] top-1/2 h-0.5 w-6 bg-slate-300" />
-                    <ChevronRight className="absolute -right-5 top-[calc(50%-10px)] h-5 w-5 text-slate-400" aria-hidden="true" />
+                    <div className="absolute left-[calc(100%-2px)] top-1/2 h-0.5 w-6 bg-line" />
+                    <ChevronRight className="absolute -right-5 top-[calc(50%-10px)] h-5 w-5 text-muted/75" aria-hidden="true" />
                   </div>
                 ) : null}
               </div>
@@ -1197,24 +1233,24 @@ function AuthorityMap({ overview }: { overview: Overview }) {
           })}
         </div>
 
-        <div className="mt-4 rounded-lg border border-rose-200 bg-white p-4">
+        <div className="neo-status-danger mt-4 rounded-lg p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-500 text-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-danger text-secondary">
               <AlertTriangle className="h-5 w-5" aria-hidden="true" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-rose-900">Unexpected shortcut found</p>
-              <p className="text-sm text-rose-700">
+              <p className="font-bold text-text">Unexpected shortcut found</p>
+              <p className="text-sm text-text/75">
                 A few syllabus changes skipped the normal department review. The staff dashboard flags this before it becomes a habit.
               </p>
             </div>
-            <Badge className="w-fit border-rose-200 bg-rose-50 text-rose-800">Needs review</Badge>
+            <Badge className="w-fit neo-status-danger">Needs review</Badge>
           </div>
         </div>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {overview.decision_map.anomalies.map((item) => (
-          <div key={item} className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm font-medium text-rose-800">
+          <div key={item} className="neo-status-danger rounded-lg p-3 text-sm font-bold">
             {item}
           </div>
         ))}
@@ -1341,27 +1377,27 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
             <div className="space-y-4">
               {pathway.skills.map((skill) => (
                 <div key={skill.name}>
-                  <div className="mb-1 flex justify-between text-sm font-semibold text-slate-600">
+                  <div className="mb-1 flex justify-between text-sm font-bold text-text/75">
                     <span>{skill.name}</span>
                     <span>{skill.mastery}%</span>
                   </div>
-                  <ProgressBar value={skill.mastery} tone={skill.mastery >= 70 ? "bg-emerald-500" : "bg-amber-500"} />
+                  <ProgressBar value={skill.mastery} tone={skill.mastery >= 70 ? "bg-success" : "bg-warning"} />
                 </div>
               ))}
             </div>
             <div className="space-y-3">
               {pathway.next_steps.map((step) => (
-                <div key={step.title} className="rounded-lg border border-line p-4">
+                <div key={step.title} className="neo-panel-soft p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-ink">{step.title}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="font-bold text-text">{step.title}</p>
+                      <p className="text-sm text-muted">
                         {step.course} · {step.type} · {step.estimated_time}
                       </p>
                     </div>
                     <Badge className={riskClasses(step.priority)}>{step.priority}</Badge>
                   </div>
-                  <p className="mt-3 text-sm text-slate-600">{step.reason}</p>
+                  <p className="mt-3 text-sm text-text/75">{step.reason}</p>
                 </div>
               ))}
             </div>
@@ -1373,7 +1409,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
             <select
               value={chatCourse}
               onChange={(event) => setChatCourse(event.target.value)}
-              className="rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-slate-700"
+              className="neo-input px-3 py-2 text-sm font-bold text-text"
             >
               {myCourses.map((course) => (
                 <option key={course.id} value={course.id}>
@@ -1381,17 +1417,17 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                 </option>
               ))}
             </select>
-            <Badge className={overview.system.groq_configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}>
+            <Badge className={overview.system.groq_configured ? "neo-status-success" : "border-line bg-surface/70 text-text/85"}>
               {overview.system.groq_configured ? "AI ready" : "Local guide"}
             </Badge>
           </div>
-          <div className="thin-scrollbar h-72 space-y-3 overflow-y-auto rounded-lg border border-line bg-slate-50 p-3">
+          <div className="neo-inset thin-scrollbar h-72 space-y-3 overflow-y-auto p-3">
             {chat.map((message, index) => (
               <div
                 key={`${message.role}-${index}`}
                 className={clsx(
-                  "max-w-[92%] rounded-lg px-3 py-2 text-sm",
-                  message.role === "user" ? "ml-auto bg-ink text-white" : "bg-white text-slate-700",
+                  "max-w-[92%] rounded-lg px-3 py-2 text-sm shadow-neo-soft",
+                  message.role === "user" ? "ml-auto bg-primary text-secondary" : "bg-secondary text-text/85",
                 )}
               >
                 {message.role === "user" ? <p>{message.content}</p> : <FormattedAiText content={message.content} />}
@@ -1405,12 +1441,12 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
               onKeyDown={(event) => {
                 if (event.key === "Enter") void handleSend();
               }}
-              className="min-w-0 flex-1 rounded-lg border border-line px-3 py-2 text-sm outline-none"
+              className="neo-input min-w-0 flex-1 px-3 py-2 text-sm outline-none"
             />
             <button
               onClick={() => void handleSend()}
               disabled={sending}
-              className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              className="neo-button neo-button-primary px-4 py-2"
             >
               <Send className="h-4 w-4" aria-hidden="true" />
               Send
@@ -1422,8 +1458,8 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
       <div className="grid gap-5">
         <Panel id="my-courses" title="Courses You Can Join" eyebrow="Browse, check seats, and enroll" icon={BookOpen}>
           <div className="mb-4 grid gap-3 md:grid-cols-[1fr_220px_auto]">
-            <div className="flex items-center gap-2 rounded-lg border border-line bg-white px-3 py-2">
-              <Search className="h-4 w-4 text-slate-400" aria-hidden="true" />
+            <div className="neo-input flex items-center gap-2 px-3 py-2">
+              <Search className="h-4 w-4 text-muted/75" aria-hidden="true" />
               <input
                 value={courseQuery}
                 onChange={(event) => setCourseQuery(event.target.value)}
@@ -1434,7 +1470,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
             <select
               value={courseDepartment}
               onChange={(event) => setCourseDepartment(event.target.value)}
-              className="rounded-lg border border-line bg-white px-3 py-2 text-sm font-medium text-slate-700"
+              className="neo-input px-3 py-2 text-sm font-bold text-text"
               aria-label="Filter courses by department"
             >
               {courseDepartments.map((department) => (
@@ -1450,7 +1486,7 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                 setCourseDepartment("All");
                 setShowAllCourses(false);
               }}
-              className="rounded-lg border border-line bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+              className="neo-button px-3 py-2"
               disabled={!courseQuery && courseDepartment === "All" && !showAllCourses}
             >
               Reset
@@ -1460,48 +1496,48 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
             {displayedCourses.map((course) => {
               const enrollment = myEnrollments.find((item) => item.course_id === course.id);
               return (
-                <div key={course.id} className="rounded-lg border border-line p-4">
+                <div key={course.id} className="neo-panel-soft p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-ink">{course.code} · {course.title}</p>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="font-bold text-text">{course.code} · {course.title}</p>
+                      <p className="mt-1 text-sm text-muted">
                         {course.department} · {course.term} · {course.credits} credits · {course.faculty.join(", ")}
                       </p>
                     </div>
-                    <Badge className={enrollment ? riskClasses(enrollment.status) : "border-slate-200 bg-slate-50 text-slate-700"}>
+                    <Badge className={enrollment ? riskClasses(enrollment.status) : "border-line bg-surface/70 text-text/85"}>
                       {enrollment ? friendlyStatus(enrollment.status) : "Open"}
                     </Badge>
                   </div>
-                  <p className="mt-3 text-sm text-slate-600">{course.description}</p>
+                  <p className="mt-3 text-sm text-text/75">{course.description}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {course.skills.map((skill) => (
-                      <Badge key={skill} className="border-slate-200 bg-slate-50 text-slate-700">
+                      <Badge key={skill} className="border-line bg-surface/70 text-text/85">
                         {skill}
                       </Badge>
                     ))}
                   </div>
-                  <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                  <div className="mt-3 grid gap-2 text-xs text-muted sm:grid-cols-3">
                     <span>Prereq: {course.prerequisites.length ? course.prerequisites.join(", ") : "Open"}</span>
                     <span>Avg grade {course.average_grade}</span>
                     <span>Usage {course.adoption}%</span>
                   </div>
                   {enrollment ? (
                     <div className="mt-3">
-                      <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500">
+                      <div className="mb-1 flex justify-between text-xs font-bold text-muted">
                         <span>Course progress</span>
                         <span>{enrollment.progress}%</span>
                       </div>
-                      <ProgressBar value={enrollment.progress} tone={enrollment.deadline_risk === "Medium" ? "bg-amber-500" : "bg-emerald-500"} />
+                      <ProgressBar value={enrollment.progress} tone={enrollment.deadline_risk === "Medium" ? "bg-warning" : "bg-success"} />
                     </div>
                   ) : null}
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-muted">
                       {Math.max(course.capacity - course.enrolled, 0)} seats open · {course.waitlist} waiting
                     </p>
                     <button
                       disabled={Boolean(enrollment) || enrolling === course.id}
                       onClick={() => void handleEnroll(course)}
-                      className="inline-flex items-center gap-2 rounded-lg border border-ink bg-white px-3 py-2 text-sm font-semibold text-ink disabled:border-slate-200 disabled:text-slate-400"
+                      className="neo-button px-3 py-2"
                     >
                       {enrollment ? <CheckCircle2 className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       {enrollment ? "Joined" : enrolling === course.id ? "Joining" : "Join Course"}
@@ -1512,17 +1548,17 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
             })}
           </div>
           {!visibleCourses.length ? (
-            <div className="mt-4 rounded-lg border border-dashed border-line bg-slate-50 p-8 text-center text-sm text-slate-500">
+            <div className="neo-empty mt-4 p-8 text-center text-sm font-bold text-muted">
               No courses match that filter.
             </div>
           ) : null}
           {visibleCourses.length > displayedCourses.length ? (
-            <div className="mt-4 flex items-center justify-between rounded-lg border border-line bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            <div className="neo-inset mt-4 flex items-center justify-between px-4 py-3 text-sm text-text/75">
               <span>Showing {displayedCourses.length} of {visibleCourses.length} courses.</span>
               <button
                 type="button"
                 onClick={() => setShowAllCourses(true)}
-                className="font-semibold text-ink hover:underline"
+                className="font-bold text-text hover:underline"
               >
                 Show all courses
               </button>
@@ -1535,11 +1571,11 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
         <Panel id="credentials" title="Certificates" eyebrow="Proof of completed learning" icon={WalletCards}>
           <div className="space-y-3">
             {overview.certificates.map((certificate) => (
-              <div key={certificate.id} className="rounded-lg border border-line p-4">
+              <div key={certificate.id} className="neo-panel-soft p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-semibold text-ink">{certificate.course}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="font-bold text-text">{certificate.course}</p>
+                    <p className="text-sm text-muted">
                       {friendlyCertificateSource(certificate.chain)} · {certificate.issued_at}
                     </p>
                   </div>
@@ -1548,18 +1584,18 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                     <button
                       type="button"
                       onClick={() => void handleVerify(certificate.hash)}
-                      className="rounded-lg border border-line bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      className="neo-button px-3 py-1.5 text-xs"
                     >
                       Check
                     </button>
                   </div>
                 </div>
-                <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Certificate ID</p>
-                <p className="mt-1 break-all rounded-lg bg-slate-50 p-2 text-xs text-slate-600">{certificate.hash}</p>
+                <p className="mt-3 font-label text-xs font-bold uppercase tracking-normal text-muted/75">Certificate ID</p>
+                <p className="mt-1 break-all rounded-lg bg-surface/70 p-2 text-xs text-text/75">{certificate.hash}</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge className="border-slate-200 bg-slate-50 text-slate-700">Grade {certificate.grade}</Badge>
+                  <Badge className="border-line bg-surface/70 text-text/85">Grade {certificate.grade}</Badge>
                   {certificate.badges.map((badge) => (
-                    <Badge key={badge} className="border-sky-200 bg-sky-50 text-sky-800">{badge}</Badge>
+                    <Badge key={badge} className="neo-status-info">{badge}</Badge>
                   ))}
                 </div>
               </div>
@@ -1569,14 +1605,14 @@ function StudentDashboard({ overview, onRefresh }: { overview: Overview; onRefre
             <input
               value={verifyHash}
               onChange={(event) => setVerifyHash(event.target.value)}
-              className="min-w-0 flex-1 rounded-lg border border-line px-3 py-2 text-sm"
+              className="neo-input min-w-0 flex-1 px-3 py-2 text-sm"
               placeholder="Paste certificate ID"
             />
-            <button onClick={() => void handleVerify()} className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white">
+            <button onClick={() => void handleVerify()} className="neo-button neo-button-primary px-4 py-2">
               Verify
             </button>
           </div>
-          {verifyResult ? <p className="mt-3 text-sm font-medium text-slate-700">{verifyResult}</p> : null}
+          {verifyResult ? <p className="mt-3 text-sm font-bold text-text/85">{verifyResult}</p> : null}
         </Panel>
         <GamificationPanel overview={overview} />
       </div>
@@ -1648,23 +1684,23 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
         <Panel id="course-studio" title="Classes I Teach" eyebrow="Quick view for the teacher" icon={BookOpen}>
           <div className="grid gap-3 lg:grid-cols-2">
             {activeCourses.map((course) => (
-              <div key={course.id} className="rounded-lg border border-line p-4">
+              <div key={course.id} className="neo-panel-soft p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-ink">{course.code} · {course.title}</p>
-                    <p className="text-sm text-slate-500">{course.enrolled} students · avg GPA {course.average_grade}</p>
+                    <p className="font-bold text-text">{course.code} · {course.title}</p>
+                    <p className="text-sm text-muted">{course.enrolled} students · avg GPA {course.average_grade}</p>
                   </div>
-                  <Badge className="border-emerald-200 bg-emerald-50 text-emerald-800">{course.status}</Badge>
+                  <Badge className="neo-status-success">{course.status}</Badge>
                 </div>
-                <p className="mt-3 text-sm text-slate-600">{course.description}</p>
+                <p className="mt-3 text-sm text-text/75">{course.description}</p>
                 <div className="mt-3">
-                  <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500">
+                  <div className="mb-1 flex justify-between text-xs font-bold text-muted">
                     <span>Engagement</span>
                     <span>{course.adoption}%</span>
                   </div>
-                  <ProgressBar value={course.adoption} tone="bg-sky-500" />
+                  <ProgressBar value={course.adoption} tone="bg-primary" />
                 </div>
-                <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                <div className="mt-3 grid gap-2 text-xs text-muted sm:grid-cols-3">
                   <span>{course.term}</span>
                   <span>{course.waitlist} waitlisted</span>
                   <span>{course.skills.join(", ")}</span>
@@ -1680,27 +1716,27 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
               const assessment = assessmentsById.get(submission.assessment_id);
 
               return (
-                <div key={submission.id} className="rounded-lg border border-line p-4">
+                <div key={submission.id} className="neo-panel-soft p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-ink">{submission.student_name}</p>
-                      <p className="text-sm text-slate-500">
+                      <p className="font-bold text-text">{submission.student_name}</p>
+                      <p className="text-sm text-muted">
                         {courseCodeFor(overview, submission.course_id)} · {formatTime(submission.submitted_at)} · originality {(100 - submission.similarity_score * 100).toFixed(0)}%
                       </p>
                     </div>
                     <Badge className={riskClasses(submission.status)}>{friendlyStatus(submission.status)}</Badge>
                   </div>
                   {assessment ? (
-                    <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                    <div className="mt-3 grid gap-2 text-xs text-muted sm:grid-cols-3">
                       <span>{assessment.title}</span>
                       <span>{assessment.type} · {assessment.weight}%</span>
                       <span>Due {assessment.due_date} · {assessment.max_score} pts</span>
                     </div>
                   ) : null}
-                  <p className="mt-3 text-sm text-slate-600">{submission.text}</p>
-                  {assessment ? <p className="mt-2 text-xs text-slate-500">Rubric: {assessment.rubric}</p> : null}
+                  <p className="mt-3 text-sm text-text/75">{submission.text}</p>
+                  {assessment ? <p className="mt-2 text-xs text-muted">Rubric: {assessment.rubric}</p> : null}
                   {suggestion[submission.id] ? (
-                    <div className="mt-3 rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
+                    <div className="neo-inset mt-3 p-3 text-sm text-text">
                       <FormattedAiText content={suggestion[submission.id]} />
                     </div>
                   ) : null}
@@ -1708,7 +1744,7 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                     <button
                       onClick={() => void handleSuggest(submission.id)}
                       disabled={working === submission.id}
-                      className="inline-flex items-center gap-2 rounded-lg border border-ink bg-white px-3 py-2 text-sm font-semibold text-ink disabled:opacity-60"
+                      className="neo-button px-3 py-2"
                     >
                       <Bot className="h-4 w-4" aria-hidden="true" />
                       Draft Feedback
@@ -1716,7 +1752,7 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
                     <button
                       onClick={() => void handleApply(submission.id)}
                       disabled={working === submission.id || !suggestion[submission.id]}
-                      className="inline-flex items-center gap-2 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                      className="neo-button neo-button-primary px-3 py-2"
                     >
                       <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                       Save Suggested Grade
@@ -1726,7 +1762,7 @@ function FacultyDashboard({ overview, onRefresh }: { overview: Overview; onRefre
               );
             })}
             {!gradingQueue.length ? (
-              <div className="rounded-lg border border-dashed border-line bg-slate-50 p-8 text-center text-sm text-slate-500">
+              <div className="neo-empty p-8 text-center text-sm font-bold text-muted">
                 All submitted work has been reviewed.
               </div>
             ) : null}
@@ -1746,13 +1782,13 @@ function SkillGapPanel({ overview, id }: { overview: Overview; id?: string }) {
     <Panel id={id} title="What Graduates Say Is Missing" eyebrow="Helps teachers improve courses" icon={GitBranch}>
       <div className="space-y-3">
         {overview.alumni_skill_gaps.map((gap) => (
-          <div key={gap.skill} className="rounded-lg border border-line p-4">
+          <div key={gap.skill} className="neo-panel-soft p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-ink">{gap.skill}</p>
-                <p className="text-sm text-slate-500">{gap.affected_courses.join(", ")}</p>
+                <p className="font-bold text-text">{gap.skill}</p>
+                <p className="text-sm text-muted">{gap.affected_courses.join(", ")}</p>
               </div>
-              <Badge className={gap.gap_score > 40 ? "border-rose-200 bg-rose-50 text-rose-800" : "border-amber-200 bg-amber-50 text-amber-800"}>
+              <Badge className={gap.gap_score > 40 ? "neo-status-danger" : "neo-status-warning"}>
                 Missing {gap.gap_score}
               </Badge>
             </div>
@@ -1760,8 +1796,8 @@ function SkillGapPanel({ overview, id }: { overview: Overview; id?: string }) {
               <Signal label="Demand" value={gap.demand_score} />
               <Signal label="Coverage" value={gap.curriculum_coverage} />
             </div>
-            <p className="mt-3 text-sm text-slate-600">{gap.suggestion}</p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{gap.faculty_response}</p>
+            <p className="mt-3 text-sm text-text/75">{gap.suggestion}</p>
+            <p className="mt-2 font-label text-xs font-bold uppercase tracking-normal text-muted">{gap.faculty_response}</p>
           </div>
         ))}
       </div>
@@ -1774,11 +1810,11 @@ function KnowledgeContinuityPanel({ overview }: { overview: Overview }) {
     <Panel id="knowledge-risk" title="Knowledge Continuity" eyebrow="Courses that need teaching backup" icon={AlertTriangle}>
       <div className="space-y-3">
         {overview.knowledge_continuity.map((item) => (
-          <div key={item.course} className="rounded-lg border border-line p-4">
+          <div key={item.course} className="neo-panel-soft p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-ink">{item.course}</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-bold text-text">{item.course}</p>
+                <p className="text-sm text-muted">
                   {item.department} · {item.faculty} · {item.sole_instructor_terms} sole-instructor terms
                 </p>
               </div>
@@ -1787,10 +1823,10 @@ function KnowledgeContinuityPanel({ overview }: { overview: Overview }) {
             <div className="mt-3">
               <Signal label="Continuity risk" value={item.risk_score} />
             </div>
-            <p className="mt-3 text-sm text-slate-600">Retirement window: {item.retirement_window}</p>
+            <p className="mt-3 text-sm text-text/75">Retirement window: {item.retirement_window}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {item.suggestions.map((suggestion) => (
-                <Badge key={suggestion} className="border-amber-200 bg-amber-50 text-amber-800">{suggestion}</Badge>
+                <Badge key={suggestion} className="neo-status-warning">{suggestion}</Badge>
               ))}
             </div>
           </div>
@@ -1807,45 +1843,45 @@ function GamificationPanel({ overview }: { overview: Overview }) {
   return (
     <Panel id="learning-rewards" title="Learning Rewards" eyebrow="Participation, badges, and perks" icon={WalletCards}>
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-lg border border-line p-4">
+        <div className="neo-panel-soft p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">Level {rewards.level}</p>
-              <p className="text-3xl font-semibold text-ink">{rewards.xp} XP</p>
+              <p className="text-sm text-muted">Level {rewards.level}</p>
+              <p className="text-3xl font-bold text-text">{rewards.xp} XP</p>
             </div>
-            <Badge className="border-sky-200 bg-sky-50 text-sky-800">Rank #{rewards.rank}</Badge>
+            <Badge className="neo-status-info">Rank #{rewards.rank}</Badge>
           </div>
           <div className="mt-4">
-            <div className="mb-1 flex justify-between text-xs font-semibold text-slate-500">
+            <div className="mb-1 flex justify-between text-xs font-bold text-muted">
               <span>Next level</span>
               <span>{rewards.next_level_xp - rewards.xp} XP left</span>
             </div>
-            <ProgressBar value={progress} tone="bg-sky-500" />
+            <ProgressBar value={progress} tone="bg-primary" />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {rewards.badges.map((badge) => (
-              <Badge key={badge} className="border-emerald-200 bg-emerald-50 text-emerald-800">{badge}</Badge>
+              <Badge key={badge} className="neo-status-success">{badge}</Badge>
             ))}
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-line p-4">
-            <p className="font-semibold text-ink">Recent XP</p>
+          <div className="neo-panel-soft p-4">
+            <p className="font-bold text-text">Recent XP</p>
             <div className="mt-3 space-y-2">
               {rewards.wallet_events.map((event) => (
                 <div key={`${event.label}-${event.date}`} className="flex justify-between gap-3 text-sm">
-                  <span className="text-slate-600">{event.label}</span>
-                  <span className="font-semibold text-ink">+{event.xp}</span>
+                  <span className="text-text/75">{event.label}</span>
+                  <span className="font-bold text-text">+{event.xp}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="rounded-lg border border-line p-4">
-            <p className="font-semibold text-ink">Perks</p>
+          <div className="neo-panel-soft p-4">
+            <p className="font-bold text-text">Perks</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {rewards.redeemable_perks.map((perk) => (
-                <Badge key={perk} className="border-slate-200 bg-slate-50 text-slate-700">{perk}</Badge>
+                <Badge key={perk} className="border-line bg-surface/70 text-text/85">{perk}</Badge>
               ))}
             </div>
           </div>
@@ -1860,30 +1896,30 @@ function ChangeManagementPanel({ overview, id }: { overview: Overview; id?: stri
     <Panel id={id} title="Change Management Console" eyebrow={overview.change_management.framework} icon={Users}>
       <div className="grid gap-3">
         {overview.change_management.rollout.map((stage) => (
-          <div key={stage.stage} className="rounded-lg border border-line p-4">
+          <div key={stage.stage} className="neo-panel-soft p-4">
             <div className="flex items-center justify-between gap-3">
-              <p className="font-semibold text-ink">{stage.stage}</p>
+              <p className="font-bold text-text">{stage.stage}</p>
               <Badge className={riskClasses(stage.status)}>{stage.status}</Badge>
             </div>
-            <p className="mt-2 text-sm text-slate-600">{stage.details}</p>
+            <p className="mt-2 text-sm text-text/75">{stage.details}</p>
           </div>
         ))}
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {overview.change_management.champions.map((champion) => (
-          <div key={champion.name} className="rounded-lg border border-line p-3">
-            <p className="font-semibold text-ink">{champion.name}</p>
-            <p className="text-sm text-slate-500">{champion.department}</p>
-            <p className="mt-2 text-sm text-slate-600">{champion.impact}</p>
+          <div key={champion.name} className="neo-panel-soft p-3">
+            <p className="font-bold text-text">{champion.name}</p>
+            <p className="text-sm text-muted">{champion.department}</p>
+            <p className="mt-2 text-sm text-text/75">{champion.impact}</p>
           </div>
         ))}
       </div>
       <div className="mt-4 grid gap-3">
         {overview.change_management.training_sessions.map((session) => (
-          <div key={session.title} className="flex items-center justify-between gap-3 rounded-lg border border-line p-3">
+          <div key={session.title} className="neo-panel-soft flex items-center justify-between gap-3 p-3">
             <div>
-              <p className="font-semibold text-ink">{session.title}</p>
-              <p className="text-sm text-slate-500">{session.date} · {session.attendance} attendees</p>
+              <p className="font-bold text-text">{session.title}</p>
+              <p className="text-sm text-muted">{session.date} · {session.attendance} attendees</p>
             </div>
             <Badge className={riskClasses(session.status)}>{session.status}</Badge>
           </div>
@@ -1899,7 +1935,7 @@ function AuditPanel({ overview, id = "audit-trail" }: { overview: Overview; id?:
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] border-separate border-spacing-0 text-left text-sm">
           <thead>
-            <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
+            <tr className="font-label text-xs uppercase tracking-normal text-muted">
               <th className="border-b border-line px-3 py-2">Time</th>
               <th className="border-b border-line px-3 py-2">Actor</th>
               <th className="border-b border-line px-3 py-2">Role</th>
@@ -1910,10 +1946,10 @@ function AuditPanel({ overview, id = "audit-trail" }: { overview: Overview; id?:
           <tbody>
             {overview.audit_log.slice(0, 8).map((event) => (
               <tr key={`${event.timestamp}-${event.action}`}>
-                <td className="border-b border-line px-3 py-3 text-slate-500">{formatTime(event.timestamp)}</td>
-                <td className="border-b border-line px-3 py-3 font-medium text-ink">{event.actor}</td>
-                <td className="border-b border-line px-3 py-3 text-slate-600">{event.role}</td>
-                <td className="border-b border-line px-3 py-3 text-slate-600">{event.action}</td>
+                <td className="border-b border-line px-3 py-3 text-muted">{formatTime(event.timestamp)}</td>
+                <td className="border-b border-line px-3 py-3 font-bold text-text">{event.actor}</td>
+                <td className="border-b border-line px-3 py-3 text-text/75">{event.role}</td>
+                <td className="border-b border-line px-3 py-3 text-text/75">{event.action}</td>
                 <td className="border-b border-line px-3 py-3">
                   <Badge className={riskClasses(event.risk)}>{event.risk}</Badge>
                 </td>
@@ -1947,11 +1983,11 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
         <Panel id="local-stack" title="Free-Tier Dependency Map" eyebrow="Zero-cost strategy" icon={Database}>
           <div className="space-y-3">
             {overview.free_tier_stack.map((item) => (
-              <div key={item.service} className="grid gap-3 rounded-lg border border-line p-4 sm:grid-cols-[0.8fr_1.1fr_0.7fr_1fr]">
-                <p className="font-semibold text-ink">{item.service}</p>
-                <p className="text-sm text-slate-600">{item.provider}</p>
-                <Badge className="w-fit border-slate-200 bg-slate-50 text-slate-700">{item.status}</Badge>
-                <p className="text-sm text-slate-500">{item.limit}</p>
+              <div key={item.service} className="neo-panel-soft grid gap-3 p-4 sm:grid-cols-[0.8fr_1.1fr_0.7fr_1fr]">
+                <p className="font-bold text-text">{item.service}</p>
+                <p className="text-sm text-text/75">{item.provider}</p>
+                <Badge className="w-fit border-line bg-surface/70 text-text/85">{item.status}</Badge>
+                <p className="text-sm text-muted">{item.limit}</p>
               </div>
             ))}
           </div>
@@ -1963,21 +1999,21 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
               <AreaChart data={areaData} margin={{ left: -20, right: 20 }}>
                 <defs>
                   <linearGradient id="storage" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                    <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.35} />
+                    <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Area type="monotone" dataKey="storage" stroke="#0ea5e9" fill="url(#storage)" />
-                <Line type="monotone" dataKey="requests" stroke="#10b981" strokeWidth={3} />
-                <Line type="monotone" dataKey="latency" stroke="#f59e0b" strokeWidth={2} />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.line} />
+                <XAxis dataKey="month" tick={{ fill: CHART_COLORS.muted }} />
+                <YAxis tick={{ fill: CHART_COLORS.muted }} />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                <Area type="monotone" dataKey="storage" stroke={CHART_COLORS.primary} fill="url(#storage)" />
+                <Line type="monotone" dataKey="requests" stroke={CHART_COLORS.success} strokeWidth={3} />
+                <Line type="monotone" dataKey="latency" stroke={CHART_COLORS.warning} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-2">
+          <div className="mt-3 grid gap-2 text-xs text-muted sm:grid-cols-2">
             <span>{areaData.at(-1)?.requests ?? 0}k monthly requests</span>
             <span>{areaData.at(-1)?.errors ?? 0} reported errors this month</span>
           </div>
@@ -1988,7 +2024,7 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
         <Panel id="api-surface" title="API Surface" eyebrow="Endpoint inventory" icon={GitBranch}>
           <div className="grid gap-2">
             {overview.api_endpoints.map((endpoint) => (
-              <div key={endpoint} className="rounded-lg border border-line bg-slate-50 px-3 py-2 font-mono text-xs text-slate-700">
+              <div key={endpoint} className="neo-inset px-3 py-2 font-mono text-xs text-text/85">
                 {endpoint}
               </div>
             ))}
@@ -1998,11 +2034,11 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
         <Panel id="privacy" title="Privacy & Compliance Posture" eyebrow="FERPA / GDPR controls" icon={LockKeyhole}>
           <div className="grid gap-3">
             {overview.privacy_controls.map((item) => (
-              <div key={item.title} className="flex gap-3 rounded-lg border border-line p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" aria-hidden="true" />
+              <div key={item.title} className="neo-panel-soft flex gap-3 p-4">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 text-success" aria-hidden="true" />
                 <div>
-                  <p className="font-semibold text-ink">{item.title}</p>
-                  <p className="text-sm text-slate-600">{item.detail}</p>
+                  <p className="font-bold text-text">{item.title}</p>
+                  <p className="text-sm text-text/75">{item.detail}</p>
                 </div>
               </div>
             ))}

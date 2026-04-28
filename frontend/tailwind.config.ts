@@ -4,13 +4,39 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-md)",
+      },
       boxShadow: {
-        panel: "0 12px 32px rgba(15, 23, 42, 0.08)",
+        panel: "var(--shadow-raised)",
+        neo: "var(--shadow-raised)",
+        "neo-soft": "var(--shadow-soft)",
+        inset: "var(--shadow-inset)",
       },
       colors: {
-        ink: "#13202f",
-        line: "#d9e2ec",
-        page: "#f5f7fb",
+        primary: "rgb(var(--color-primary-rgb) / <alpha-value>)",
+        secondary: "rgb(var(--color-secondary-rgb) / <alpha-value>)",
+        surface: "rgb(var(--color-surface-rgb) / <alpha-value>)",
+        text: "rgb(var(--color-text-rgb) / <alpha-value>)",
+        muted: "rgb(var(--color-muted-rgb) / <alpha-value>)",
+        line: "rgb(var(--color-line-rgb) / <alpha-value>)",
+        success: "rgb(var(--color-success-rgb) / <alpha-value>)",
+        warning: "rgb(var(--color-warning-rgb) / <alpha-value>)",
+        danger: "rgb(var(--color-danger-rgb) / <alpha-value>)",
+        info: "rgb(var(--color-info-rgb) / <alpha-value>)",
+        ink: "rgb(var(--color-text-rgb) / <alpha-value>)",
+        page: "rgb(var(--color-surface-rgb) / <alpha-value>)",
+      },
+      fontFamily: {
+        primary: ["var(--font-space-mono)", "ui-monospace", "monospace"],
+        display: ["var(--font-space-mono)", "ui-monospace", "monospace"],
+        label: ["var(--font-jetbrains-mono)", "ui-monospace", "monospace"],
+        mono: ["var(--font-jetbrains-mono)", "ui-monospace", "monospace"],
+      },
+      spacing: {
+        18: "4.5rem",
       },
     },
   },
@@ -18,4 +44,3 @@ const config: Config = {
 };
 
 export default config;
-
