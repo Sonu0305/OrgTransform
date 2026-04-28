@@ -669,7 +669,6 @@ function LoginScreen({
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Available logins</p>
               <h2 className="text-2xl font-semibold text-ink">Choose your role</h2>
             </div>
-            <p className="text-sm text-slate-500">Demo users are preloaded for each workspace.</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
