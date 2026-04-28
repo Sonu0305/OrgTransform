@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
+import ReactMarkdown from "react-markdown";
 import {
   Activity,
   AlertTriangle,
@@ -322,147 +323,41 @@ function MetricCard({ label, value, delta, tone }: { label: string; value: strin
   );
 }
 
-function renderInlineMarkdown(text: string, inverse = false) {
-  const chunks = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).filter(Boolean);
-  return chunks.map((chunk, index) => {
-    if (chunk.startsWith("`") && chunk.endsWith("`")) {
-      return (
-        <code
-          key={`${chunk}-${index}`}
-          className={clsx("rounded border px-1.5 py-0.5 font-mono text-[0.86em]", inverse ? "border-white/25 bg-white/10" : "border-slate-200 bg-slate-100 text-slate-800")}
-        >
-          {chunk.slice(1, -1)}
-        </code>
-      );
-    }
-    if (chunk.startsWith("**") && chunk.endsWith("**")) {
-      return (
-        <strong key={`${chunk}-${index}`} className={inverse ? "font-semibold text-white" : "font-semibold text-ink"}>
-          {chunk.slice(2, -2)}
-        </strong>
-      );
-    }
-    return <span key={`${chunk}-${index}`}>{chunk}</span>;
-  });
-}
-
 function FormattedAiText({ content, inverse = false }: { content: string; inverse?: boolean }) {
-  const normalized = content.replace(/\r/g, "").trim();
-  const lines = normalized.split("\n");
-  const blocks: React.ReactNode[] = [];
-  let index = 0;
-
-  while (index < lines.length) {
-    const raw = lines[index];
-    const line = raw.trim();
-
-    if (!line) {
-      index += 1;
-      continue;
-    }
-
-    if (/^[=-]{3,}$/.test(line)) {
-      index += 1;
-      continue;
-    }
-
-    if (index + 1 < lines.length && /^[=-]{3,}$/.test(lines[index + 1].trim())) {
-      blocks.push(
-        <p key={`setext-heading-${index}`} className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>
-          {renderInlineMarkdown(line.replace(/^\*\*|\*\*$/g, ""), inverse)}
-        </p>,
-      );
-      index += 2;
-      continue;
-    }
-
-    if (line.startsWith("```")) {
-      const codeLines: string[] = [];
-      index += 1;
-      while (index < lines.length && !lines[index].trim().startsWith("```")) {
-        codeLines.push(lines[index]);
-        index += 1;
-      }
-      index += 1;
-      blocks.push(
-        <pre key={`code-${index}`} className={clsx("overflow-x-auto rounded-lg p-3 text-xs", inverse ? "bg-white/10 text-white" : "bg-slate-100 text-slate-800")}>
-          <code>{codeLines.join("\n")}</code>
-        </pre>,
-      );
-      continue;
-    }
-
-    const heading = line.match(/^#{1,6}\s+(.+)$/);
-    if (heading) {
-      blocks.push(
-        <p key={`heading-${index}`} className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>
-          {renderInlineMarkdown(heading[1], inverse)}
-        </p>,
-      );
-      index += 1;
-      continue;
-    }
-
-    if (/^[-*]\s+/.test(line)) {
-      const items: string[] = [];
-      while (index < lines.length && /^[-*]\s+/.test(lines[index].trim())) {
-        items.push(lines[index].trim().replace(/^[-*]\s+/, ""));
-        index += 1;
-      }
-      blocks.push(
-        <ul key={`ul-${index}`} className={clsx("space-y-1 pl-4", inverse ? "text-white/90" : "text-slate-700")}>
-          {items.map((item, itemIndex) => (
-            <li key={`${item}-${itemIndex}`} className="list-disc">
-              {renderInlineMarkdown(item, inverse)}
-            </li>
-          ))}
-        </ul>,
-      );
-      continue;
-    }
-
-    if (/^\d+\.\s+/.test(line)) {
-      const items: string[] = [];
-      while (index < lines.length && /^\d+\.\s+/.test(lines[index].trim())) {
-        items.push(lines[index].trim().replace(/^\d+\.\s+/, ""));
-        index += 1;
-      }
-      blocks.push(
-        <ol key={`ol-${index}`} className={clsx("space-y-1 pl-4", inverse ? "text-white/90" : "text-slate-700")}>
-          {items.map((item, itemIndex) => (
-            <li key={`${item}-${itemIndex}`} className="list-decimal">
-              {renderInlineMarkdown(item, inverse)}
-            </li>
-          ))}
-        </ol>,
-      );
-      continue;
-    }
-
-    const labeled =
-      line.match(/^\*\*([A-Za-z ]{3,24}):\*\*\s*(.+)$/) ??
-      line.match(/^\*\*([A-Za-z ]{3,24})\*\*:\s*(.+)$/) ??
-      line.match(/^([A-Za-z ]{3,24}):\s*(.+)$/);
-    if (labeled) {
-      blocks.push(
-        <div key={`label-${index}`} className={clsx("rounded-lg border px-3 py-2", inverse ? "border-white/20 bg-white/10" : "border-slate-200 bg-slate-50")}>
-          <span className={clsx("text-xs font-semibold uppercase tracking-[0.12em]", inverse ? "text-white/70" : "text-slate-500")}>{labeled[1]}</span>
-          <p className={clsx("mt-1", inverse ? "text-white" : "text-slate-700")}>{renderInlineMarkdown(labeled[2], inverse)}</p>
-        </div>,
-      );
-      index += 1;
-      continue;
-    }
-
-    blocks.push(
-      <p key={`p-${index}`} className={inverse ? "text-white/90" : "text-slate-700"}>
-        {renderInlineMarkdown(line, inverse)}
-      </p>,
-    );
-    index += 1;
-  }
-
-  return <div className="space-y-2 leading-6">{blocks}</div>;
+  return (
+    <div className={clsx("space-y-2 leading-6", inverse ? "text-white/90" : "text-slate-700")}>
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
+          h2: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
+          h3: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
+          h4: ({ children }) => <p className={clsx("text-sm font-semibold", inverse ? "text-white" : "text-ink")}>{children}</p>,
+          p: ({ children }) => <p>{children}</p>,
+          strong: ({ children }) => <strong className={clsx("font-semibold", inverse ? "text-white" : "text-ink")}>{children}</strong>,
+          ul: ({ children }) => <ul className="list-disc space-y-1 pl-4">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal space-y-1 pl-4">{children}</ol>,
+          li: ({ children }) => <li>{children}</li>,
+          code: ({ children, className }) => {
+            const block = Boolean(className);
+            return block ? (
+              <code className="block whitespace-pre-wrap">{children}</code>
+            ) : (
+              <code className={clsx("rounded border px-1.5 py-0.5 font-mono text-[0.86em]", inverse ? "border-white/25 bg-white/10" : "border-slate-200 bg-slate-100 text-slate-800")}>
+                {children}
+              </code>
+            );
+          },
+          pre: ({ children }) => (
+            <pre className={clsx("overflow-x-auto rounded-lg p-3 text-xs", inverse ? "bg-white/10 text-white" : "bg-slate-100 text-slate-800")}>
+              {children}
+            </pre>
+          ),
+        }}
+      >
+        {content.replace(/\r/g, "").trim()}
+      </ReactMarkdown>
+    </div>
+  );
 }
 
 function GlobalSearch({ items, onSelect }: { items: SearchItem[]; onSelect: (item: SearchItem) => void }) {
@@ -632,18 +527,25 @@ function LoginScreen({
 
       <div className="mx-auto grid max-w-[1380px] gap-4 px-4 py-4 sm:px-6 lg:h-[calc(100vh-61px)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <section className="rounded-lg border border-line bg-white p-4 shadow-panel xl:h-fit">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Select workspace</p>
-          <h2 className="mt-2 text-xl font-semibold text-ink">Campus Course Hub</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 ring-1 ring-sky-100">
+              <LayoutGrid className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Select workspace</p>
+              <h2 className="mt-1 text-lg font-semibold text-ink">Campus Course Hub</h2>
+            </div>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
             Role-based access for registration, teaching review, academic operations, privacy, and campus workflow tracking.
           </p>
 
-          <div className="mt-4 divide-y divide-line rounded-lg border border-line bg-slate-50">
+          <div className="mt-4 grid gap-2">
             {proofPoints.map((point) => {
               const Icon = point.icon;
               return (
-                <div key={point.label} className="flex items-center gap-3 px-3 py-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-sky-600 shadow-sm">
+                <div key={point.label} className="flex items-center gap-3 rounded-lg border border-line bg-slate-50 px-3 py-2.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-sky-600 shadow-sm">
                     <Icon className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span className="min-w-0">
@@ -655,7 +557,7 @@ function LoginScreen({
             })}
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-4">
             <Badge className="border-emerald-200 bg-emerald-50 text-emerald-800">Persistent records</Badge>
             <Badge className={overview.system.groq_configured ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-700"}>
               AI {overview.system.groq_configured ? "ready" : "local"}

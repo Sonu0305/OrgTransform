@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
@@ -73,6 +74,12 @@ def system_payload() -> dict[str, Any]:
 
 def visible_api_surface() -> list[str]:
     return db.API_ENDPOINTS
+
+
+def ai_context_payload() -> str:
+    payload = db.snapshot()
+    payload["system"] = system_payload()
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
 
 
 @app.get("/health")
@@ -303,8 +310,10 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
         {
             "role": "system",
             "content": (
-                "You are the CMIS AI tutor. Ground answers in the provided course context, "
-                "be concise, avoid hallucinated institutional policy, and escalate when uncertain. "
+                "You are the CMIS AI tutor and campus assistant. You can use the full CMIS JSON context supplied by the app, "
+                "including users, courses, enrollments, submissions, gradebook, analytics, certificates, audit records, API surface, and system status. "
+                "Answer questions from that data whenever possible. Do not invent facts; if the data does not contain an answer, say what is missing and suggest where to check. "
+                "Never expose environment variables, API keys, or secrets. "
                 "Format every answer as clean markdown: one short ATX heading using ###, 3-5 bullets, and bold labels where helpful. "
                 "Keep answers under 150 words unless the student explicitly asks for a long plan. Do not use tables or underlined headings."
             ),
@@ -312,6 +321,7 @@ async def chat(course_id: str, payload: ChatMessage) -> dict[str, Any]:
         {
             "role": "user",
             "content": (
+                f"Full CMIS app context JSON:\n{ai_context_payload()}\n\n"
                 f"Course: {course['code']} - {course['title']}\n"
                 f"Description: {course['description']}\n"
                 f"Skills: {', '.join(course['skills'])}\n"
@@ -349,7 +359,10 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
         {
             "role": "system",
             "content": (
-                "You are CMIS AI-assisted grading. Return a fair rubric-aware suggestion with short feedback. "
+                "You are CMIS AI-assisted grading. You can use the full CMIS JSON context supplied by the app, "
+                "including the user, course, gradebook, submissions, certificates, analytics, audit records, API surface, and system status. "
+                "Return a fair rubric-aware suggestion with short feedback. Do not invent facts; use the supplied data and say when evidence is missing. "
+                "Never expose environment variables, API keys, or secrets. "
                 "Format as markdown with: **Suggested score:**, a Strengths heading, a Feedback heading, and concise bullets. "
                 "Use ATX headings with ###. Do not use tables or underlined headings."
             ),
@@ -357,6 +370,7 @@ async def grading_suggest(payload: GradingSuggestionRequest) -> dict[str, Any]:
         {
             "role": "user",
             "content": (
+                f"Full CMIS app context JSON:\n{ai_context_payload()}\n\n"
                 f"Assessment: {assessment['title']}\nRubric: {assessment['rubric']}\n"
                 f"Max score: {assessment['max_score']}\nSimilarity score: {submission['similarity_score']}\n"
                 f"Student work: {submission['text']}"
