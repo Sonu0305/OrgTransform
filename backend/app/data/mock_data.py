@@ -1023,7 +1023,7 @@ FREE_TIER_STACK = [
     {"service": "Backend", "provider": "FastAPI + Uvicorn", "status": "Local", "limit": "No cloud cost"},
     {"service": "Frontend", "provider": "Next.js + Tailwind", "status": "Local", "limit": "No cloud cost"},
     {"service": "Data", "provider": "SQLite dev / PostgreSQL ready", "status": "Seeded", "limit": "Campus records for local review"},
-    {"service": "LLM", "provider": "Groq Chat Completions", "status": "Configured by GROQ_API_KEY", "limit": "Local guidance when absent"},
+    {"service": "LLM", "provider": "Groq Chat Completions", "status": "Configured by Groq API", "limit": "Local guidance when absent"},
     {"service": "Search", "provider": "MeiliSearch-ready", "status": "Local", "limit": "Local API filters"},
     {"service": "Blockchain", "provider": "Polygon Mumbai-ready", "status": "Local hash", "limit": "Hash verification workflow"},
 ]

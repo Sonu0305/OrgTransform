@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import ReactMarkdown from "react-markdown";
 import {
@@ -288,6 +288,7 @@ function Panel({
   action,
   children,
   className,
+  defaultCollapsed = true,
 }: {
   id?: string;
   title: string;
@@ -296,10 +297,14 @@ function Panel({
   action?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  defaultCollapsed?: boolean;
 }) {
+  const contentId = useId();
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
   return (
     <section id={id} className={clsx("neo-panel scroll-mt-24 p-4 sm:p-5", className)}>
-      <div className="mb-4 flex items-start justify-between gap-4">
+      <div className={clsx("flex items-start justify-between gap-4", !isCollapsed && "mb-4")}>
         <div className="min-w-0">
           {eyebrow ? <p className="mb-1 font-label text-xs font-bold uppercase text-muted">{eyebrow}</p> : null}
           <h2 className="flex items-center gap-2 text-lg font-bold text-text">
@@ -307,9 +312,24 @@ function Panel({
             <span className="truncate">{title}</span>
           </h2>
         </div>
-        {action}
+        <div className="flex shrink-0 items-center gap-2">
+          {action}
+          <button
+            type="button"
+            onClick={() => setIsCollapsed((current) => !current)}
+            className="neo-button h-10 w-10 justify-center p-0"
+            aria-expanded={!isCollapsed}
+            aria-controls={contentId}
+            aria-label={isCollapsed ? `Expand ${title}` : `Collapse ${title}`}
+            title={isCollapsed ? "Expand" : "Collapse"}
+          >
+            <ChevronRight className={clsx("h-4 w-4 transition-transform", !isCollapsed && "rotate-90")} aria-hidden="true" />
+          </button>
+        </div>
       </div>
-      {children}
+      <div id={contentId} hidden={isCollapsed}>
+        {children}
+      </div>
     </section>
   );
 }
@@ -1979,7 +1999,7 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
         <MetricCard label="Privacy" value="RBAC" delta={`${overview.audit_log.length} audit events`} tone="amber" />
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+      <div className="grid gap-5">
         <Panel id="local-stack" title="Free-Tier Dependency Map" eyebrow="Zero-cost strategy" icon={Database}>
           <div className="space-y-3">
             {overview.free_tier_stack.map((item) => (
@@ -2020,7 +2040,7 @@ function ITDashboard({ overview, apiState }: { overview: Overview; apiState: "lo
         </Panel>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid gap-5">
         <Panel id="api-surface" title="API Surface" eyebrow="Endpoint inventory" icon={GitBranch}>
           <div className="grid gap-2">
             {overview.api_endpoints.map((endpoint) => (
