@@ -1,13 +1,28 @@
+<div align="center">
+
 # Campus Course Hub
 
-Campus Course Hub is a professor-ready Course Management Information System (CMIS) prototype built for an Organizational Transformation assignment. It demonstrates how a college can connect course registration, student progress, faculty grading, registrar operations, IT controls, analytics, certificates, and AI assistance in one local application.
+**A local-first Course Management Information System prototype for campus transformation.**
 
-The project is designed to run on a laptop with a FastAPI backend, a Next.js dashboard, seeded campus records, and optional Groq integration for live AI tutor and grading assistance. When Groq is not configured, the same flows continue with safe local fallback guidance.
+![Backend: FastAPI](https://img.shields.io/badge/backend-FastAPI-009688?style=for-the-badge)
+![Frontend: Next.js](https://img.shields.io/badge/frontend-Next.js-111111?style=for-the-badge)
+![AI: Groq or local fallback](https://img.shields.io/badge/AI-Groq_or_local_fallback-f55036?style=for-the-badge)
+![Mode: Local first](https://img.shields.io/badge/mode-local--first-2563eb?style=for-the-badge)
+
+[Quick Start](#quick-start) | [Demo Walkthrough](#demo-walkthrough) | [API Reference](#api-reference) | [Troubleshooting](#troubleshooting)
+
+</div>
+
+Campus Course Hub is a professor-ready Course Management Information System (CMIS) prototype built for an Organizational Transformation assignment. It demonstrates how a college can connect course registration, student progress, faculty grading, registrar operations, IT controls, analytics, certificates, and AI assistance in one coherent local application.
+
+The project runs on a laptop with a FastAPI backend, a Next.js dashboard, seeded campus records, and optional Groq integration for live AI tutor and grading assistance. When Groq is not configured, the same flows continue with safe local fallback guidance.
 
 ## Table of Contents
 
+- [At a Glance](#at-a-glance)
 - [What This Project Shows](#what-this-project-shows)
 - [Core Features](#core-features)
+- [Role Workspaces](#role-workspaces)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Repository Layout](#repository-layout)
@@ -22,6 +37,17 @@ The project is designed to run on a laptop with a FastAPI backend, a Next.js das
 - [Generated Report Artifacts](#generated-report-artifacts)
 - [Development Commands](#development-commands)
 - [Troubleshooting](#troubleshooting)
+
+## At a Glance
+
+| Area | Details |
+| --- | --- |
+| Product idea | A CMIS that turns course operations into a connected student, faculty, registrar, and IT experience. |
+| Demo style | Local, seeded, presentation-ready, and resilient without paid cloud services. |
+| Main app | Next.js role-based dashboard at `http://127.0.0.1:3000`. |
+| API | FastAPI service at `http://127.0.0.1:8000` with OpenAPI docs at `/docs`. |
+| AI mode | Groq-backed when `GROQ_API_KEY` is set; deterministic local fallback otherwise. |
+| Persistence | Mutable demo state stored in `backend/data/cmis_store.json`. |
 
 ## What This Project Shows
 
@@ -42,49 +68,38 @@ It is intentionally local-first so it can be demonstrated in class without paid 
 - Persistent local JSON store for user actions such as enrollments, grades, workflow actions, AI chat history, and certificate verification.
 - Safe local AI fallback when `GROQ_API_KEY` is missing or the Groq API is unavailable.
 
+## Role Workspaces
+
+| Workspace | Primary question answered | Representative flows |
+| --- | --- | --- |
+| Student | What should I learn, register for, and prove next? | Study plan, course registration, tutor chat, rewards, certificates |
+| Teacher | What needs review and how should feedback improve learning? | Class overview, grading queue, AI suggestion, final grade, course gaps |
+| Registrar | Where is academic operations work slowing down? | KPIs, adoption heatmap, process debt, approval route, change plan |
+| IT Support | Is the CMIS reliable, private, and explainable? | Health check, dependency map, capacity trend, API surface, audit trail |
+
 ## Architecture
 
-```text
-Browser
-  |
-  | Next.js 14 dashboard
-  | http://127.0.0.1:3000
-  v
-FastAPI backend
-  | /health
-  | /api/v1/*
-  v
-Seed data + local persistence
-  | backend/app/data/mock_data.py
-  | backend/data/cmis_store.json
-  v
-Optional Groq API
-  | https://api.groq.com/openai/v1/chat/completions
+```mermaid
+flowchart TD
+    A["Browser"] --> B["Next.js 14 dashboard<br/>127.0.0.1:3000"]
+    B --> C["FastAPI backend<br/>127.0.0.1:8000"]
+    C --> D["Seed data<br/>backend/app/data/mock_data.py"]
+    C --> E["Local persisted state<br/>backend/data/cmis_store.json"]
+    C -.-> F["Optional Groq chat completions API"]
 ```
 
 The frontend reads from the backend through `frontend/src/lib/api.ts`. The backend exposes the CMIS API from `backend/app/main.py`, loads configuration from `backend/app/config.py`, and uses `backend/app/services/groq_client.py` for optional AI completions.
 
 ## Tech Stack
 
-### Backend
-
-- Python
-- FastAPI
-- Uvicorn
-- Pydantic
-- httpx
-- python-dotenv
-- Groq-compatible chat completions endpoint
-
-### Frontend
-
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- Recharts
-- lucide-react
-- react-markdown
+| Layer | Tools | Role in the project |
+| --- | --- | --- |
+| Backend API | Python, FastAPI, Uvicorn, Pydantic | Serves CMIS data, workflows, AI routes, and audit updates |
+| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS | Provides the role-based dashboard and presentation flow |
+| Visualization | Recharts, lucide-react | Renders KPIs, capacity trends, workflow signals, and polished controls |
+| AI services | Groq-compatible chat completions, httpx | Powers tutor and grading assistant responses when configured |
+| Local config | python-dotenv, `.env` | Keeps API keys and local settings outside source code |
+| Persistence | JSON store | Saves demo actions without requiring a database server |
 
 ## Repository Layout
 
@@ -135,11 +150,13 @@ cp backend/.env.example backend/.env
 ./scripts/dev.sh
 ```
 
-Open:
+Open these local URLs:
 
-- Web app: [http://127.0.0.1:3000](http://127.0.0.1:3000)
-- API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+| Surface | URL |
+| --- | --- |
+| Web app | [http://127.0.0.1:3000](http://127.0.0.1:3000) |
+| API docs | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
+| Health check | [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) |
 
 ## Configuration
 
@@ -196,13 +213,15 @@ npm run dev --prefix frontend -- --hostname 0.0.0.0 --port 3000
 
 ## Demo Walkthrough
 
-1. Open the app and use the role selector.
-2. Start with Registrar to show campus KPIs, adoption, workflow delays, approval routing, knowledge risk, and the change plan.
-3. Switch to Student to show study progress, course registration, AI tutor, learning rewards, and certificates.
-4. Ask the AI tutor a course or grade question. With Groq configured, responses come from Groq; otherwise they come from the local fallback.
-5. Switch to Teacher to review classes, inspect the grading queue, request an AI grading suggestion, and save a grade.
-6. Switch to IT Support to show system health, capacity, endpoint inventory, privacy controls, and audit history.
-7. Return to Registrar or IT to show that actions were recorded in the audit trail.
+| Step | Workspace | What to show |
+| --- | --- | --- |
+| 1 | Role selector | The same CMIS supports student, faculty, registrar, and IT perspectives. |
+| 2 | Registrar | Campus KPIs, adoption, workflow delays, approval routing, knowledge risk, and change plan. |
+| 3 | Student | Study progress, course registration, AI tutor, learning rewards, and certificates. |
+| 4 | Student AI tutor | Course or grade questions using Groq when configured and local fallback otherwise. |
+| 5 | Teacher | Classes, grading queue, AI grading suggestion, saved feedback, and final grade. |
+| 6 | IT Support | System health, capacity, endpoint inventory, privacy controls, and audit history. |
+| 7 | Registrar or IT | New user actions appearing in the audit trail. |
 
 ## API Reference
 
